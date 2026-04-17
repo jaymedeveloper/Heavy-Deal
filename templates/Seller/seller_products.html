@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seller Products</title>
+
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            background: #eef1f7;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: #1e293b;
+            color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: #3b82f6;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 230px;
+            height: 100vh;
+            background: #111827;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            padding: 20px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .sidebar a:hover {
+            background: #1f2937;
+            color: #fff;
+        }
+
+        .icon {
+            font-size: 16px;
+        }
+
+        /* Main */
+        .main {
+            margin-left: 250px;
+            padding: 25px;
+        }
+
+        .card-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-add {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+        }
+
+        .btn-add:hover {
+            background: #1e40af;
+        }
+
+        /* Product name truncate */
+        .product-name {
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+        }
+
+        /* Responsive Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            min-width: 700px;
+        }
+
+        /* MOBILE VIEW */
+        @media (max-width: 768px) {
+
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                width: 100%;
+                height: 60px;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                padding: 0;
+                z-index: 1000;
+            }
+
+            .sidebar a {
+                flex-direction: column;
+                font-size: 12px;
+                margin: 0;
+            }
+
+            .main {
+                margin-left: 0;
+                padding-bottom: 70px;
+            }
+        }
+
+        /* Loader Full Screen */
+        #loader {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            top: 0;
+            left: 0;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Animation */
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hide Animation */
+        .loader-hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+    </style>
+
+
+</head>
+
+<body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+    <!-- Navbar -->
+
+    <div class="navbar">
+        <h5>Seller Panel</h5>
+
+
+        <div class="dropdown">
+            <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#"
+                data-bs-toggle="dropdown">
+
+                <span>{{ seller_name }}</span>
+
+                <div class="avatar ms-2">
+                    {{ seller_name[0] }}
+                </div>
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/seller/profile">Profile</a></li>
+                <li><a class="dropdown-item" href="/seller/settings">Settings</a></li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li><a class="dropdown-item text-danger" href="/logout">Logout</a></li>
+            </ul>
+        </div>
+
+
+    </div>
+
+    <!-- Sidebar -->
+
+    <div class="sidebar">
+        <a href="/seller/dashboard" onclick="showLoader()">
+            <span class="icon">🏠</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="/seller/orders" onclick="showLoader()">
+            <span class="icon">📦</span>
+            <span>Orders</span>
+        </a>
+        <a href="/seller/refunds" onclick="showLoader()">
+            <span class="icon">💸</span>
+            <span>Refunds</span>
+        </a>
+        <a href="/seller/products" onclick="showLoader()">
+            <span class="icon">🛍️</span>
+            <span>Products</span>
+        </a>
+    </div>
+
+    <!-- Main -->
+
+    <div class="main">
+
+
+        <div class="d-flex justify-content-between mb-3">
+            <h4>Products</h4>
+
+            <button class="btn-add" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                + Add Product
+            </button>
+        </div>
+
+        <div class="card-box">
+
+            {% if products %}
+
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Brand</th>
+                            <th>Refund</th>
+                            <th>Limit</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="product-name" title="{{ p[0] }}">{{ p[0] }}</td>
+                            <td>{{ p[1] }}</td>
+                            <td>₹ {{ p[2] }}</td>
+                            <td>{{ p[3] }}</td>
+                            <td><a href="{{ p[4] }}" target="_blank">View</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% else %}
+            No Product Found
+            {% endif %}
+
+        </div>
+
+
+    </div>
+
+    <!-- Modal -->
+
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form method="POST" action="/seller/products/add">
+
+                    <div class="modal-body">
+
+                        <input type="text" name="name" class="form-control mb-2" placeholder="Product Name" required>
+
+                        <input type="url" name="link" class="form-control mb-2" placeholder="Product Link" required>
+
+                        <input type="number" name="refund" class="form-control mb-2" placeholder="Refund Amount"
+                            min="120" required>
+
+                        <input type="text" name="brand" class="form-control mb-2" placeholder="Brand Name" required>
+
+                        <input type="number" name="limit" class="form-control mb-2" placeholder="Order Limit" required>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary w-100">Add Product</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+
+    </div>
+    <script>
+        function showLoader() {
+            let loader = document.getElementById("loader");
+            if (loader) {
+                loader.style.display = "flex";
+            }
+        }
+
+        /* Page load */
+        window.addEventListener("load", function () {
+            let loader = document.getElementById("loader");
+            if (loader) loader.style.display = "none";
+        });
+
+        /* Back / forward button fix */
+        window.addEventListener("pageshow", function (event) {
+            let loader = document.getElementById("loader");
+            if (loader) loader.style.display = "none";
+
+            // important: bfcache detect
+            if (event.persisted) {
+                loader.style.display = "none";
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
