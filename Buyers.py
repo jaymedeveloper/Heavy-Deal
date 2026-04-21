@@ -86,12 +86,18 @@ def buyer_auth():
 
 @buyer_bp.route('/buyer/google/login')
 def google_login():
-    return google.authorize_redirect(redirect_uri="http://127.0.0.1:8080/buyer/google/callback")
+    # Dynamically generate redirect URI based on request
+    redirect_uri = request.url_root.rstrip('/') + '/buyer/google/callback'
+    return google.authorize_redirect(redirect_uri)
 
 
 @buyer_bp.route('/buyer/google/callback')
 def google_callback():
-    token = google.authorize_access_token()
+    try:
+        token = google.authorize_access_token()
+    except Exception as e:
+        print(f"OAuth error: {e}")
+        return redirect('/buyer/auth?msg=Google+login+failed+please+try+again')
     user_info = token['userinfo']
     email = user_info['email']
     name = user_info['name']
