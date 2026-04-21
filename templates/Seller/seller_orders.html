@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Seller Orders | HeavyDeals</title>
     <link rel="icon" type="image/png" href="/static/title_logo.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -33,8 +32,18 @@
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #f0f2f5 0%, #e8ecf1 100%);
             min-height: 100vh;
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
         }
 
+        html {
+            overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Navbar Styles */
         .navbar-modern {
             background: var(--navy);
             padding: 1rem 2rem;
@@ -88,6 +97,7 @@
             color: white;
         }
 
+        /* Sidebar Styles */
         .sidebar-modern {
             position: fixed;
             left: 24px;
@@ -126,153 +136,14 @@
             color: var(--orange);
         }
 
+        /* Main Content */
         .main-modern {
             margin-left: 320px;
             padding: 2rem 2rem 3rem 2rem;
             min-height: 100vh;
         }
 
-        .orders-table-container {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .table-custom {
-            margin-bottom: 0;
-        }
-
-        .table-custom thead th {
-            background: var(--gray);
-            color: var(--navy);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 0.9rem 1rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .table-custom tbody td {
-            padding: 0.9rem 1rem;
-            vertical-align: middle;
-            color: #334155;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .table-custom tbody tr:hover {
-            background: #f8fafc;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
-
-        .status-pending {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .status-review_submitted {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .status-approved {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .status-paid {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .status-rejected {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .btn-detail {
-            background: transparent;
-            border: 1px solid #cbd5e1;
-            color: #64748b;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-detail:hover {
-            border-color: var(--orange);
-            color: var(--orange);
-            background: var(--orange-light);
-        }
-
-        .modal-modern .modal-content {
-            border-radius: 24px;
-            border: none;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .modal-modern .modal-header {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 1.5rem;
-            background: var(--gray);
-            border-radius: 24px 24px 0 0;
-        }
-
-        .modal-modern .modal-body {
-            padding: 1.5rem;
-        }
-
-        .modal-modern .modal-footer {
-            border-top: 1px solid #e2e8f0;
-            padding: 1rem 1.5rem;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: var(--navy);
-            width: 120px;
-            display: inline-block;
-            font-size: 0.8rem;
-        }
-
-        .link-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .link-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            background: #f1f5f9;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 0.75rem;
-            color: #475569;
-            transition: all 0.2s;
-        }
-
-        .link-item:hover {
-            background: var(--orange-light);
-            color: var(--orange);
-        }
-
+        /* Stats Cards */
         .stat-card {
             background: white;
             border-radius: 16px;
@@ -311,17 +182,70 @@
             color: var(--navy);
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
+        /* Orders Table */
+        .orders-table-container {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
-        .empty-state i {
-            font-size: 3rem;
-            color: #cbd5e1;
-            margin-bottom: 1rem;
+        .table-custom {
+            margin-bottom: 0;
         }
 
+        .table-custom thead th {
+            background: var(--gray);
+            color: var(--navy);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-custom tbody td {
+            padding: 0.9rem 1rem;
+            vertical-align: middle;
+            color: #334155;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-pending,
+        .status-review_submitted {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-approved,
+        .status-paid {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-rejected {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Day Group Header */
         .day-group-header {
             background: #eef2ff;
             cursor: pointer;
@@ -337,19 +261,6 @@
             font-weight: 600;
             color: var(--navy);
             border-bottom: 1px solid #c7d2fe;
-        }
-
-        .day-orders-row {
-            display: table-row;
-        }
-
-        .toggle-icon {
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-
-        .toggle-icon.rotated {
-            transform: rotate(90deg);
         }
 
         .day-summary {
@@ -381,6 +292,118 @@
             gap: 4px;
         }
 
+        .toggle-icon {
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+
+        /* Buttons */
+        .btn-detail {
+            background: transparent;
+            border: 1px solid #cbd5e1;
+            color: #64748b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-detail:hover {
+            border-color: var(--orange);
+            color: var(--orange);
+            background: var(--orange-light);
+        }
+
+        .btn-pay {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            border: none;
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-paid {
+            background: #e2e8f0;
+            color: #64748b;
+            border: none;
+            padding: 6px 20px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: not-allowed;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+
+        /* Links */
+        .link-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .link-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            text-decoration: none;
+            font-size: 0.75rem;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .link-item:hover {
+            background: var(--orange-light);
+            color: var(--orange);
+        }
+
+        /* Modal */
+        .modal-modern .modal-content {
+            border-radius: 24px;
+            border: none;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-modern .modal-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 1.5rem;
+            background: var(--gray);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--navy);
+            width: 120px;
+            display: inline-block;
+            font-size: 0.8rem;
+        }
+
+        /* Loader */
         #loader {
             position: fixed;
             width: 100%;
@@ -408,41 +431,53 @@
             }
         }
 
-        @media (max-width: 850px) {
-            @media (max-width: 850px) {
-                .sidebar-modern {
-                    position: fixed;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    top: auto;
-                    width: 100%;
-                    flex-direction: row;
-                    display: flex;
-                    justify-content: space-around;
-                    align-items: center;
-                    /* Add this */
-                    border-radius: 0;
-                    padding: 0.5rem 1rem;
-                    margin: 0;
-                    /* Add this - remove any margin */
-                    background: white;
-                    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-                    z-index: 1000;
-                }
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+        }
 
-                .sidebar-modern a {
-                    flex-direction: column;
-                    gap: 4px;
-                    padding: 8px 12px;
-                    font-size: 0.7rem;
-                    margin: 0;
-                    text-align: center;
-                    flex: 1;
-                    /* Add this - makes all items equal width */
-                    justify-content: center;
-                    /* Add this */
-                }
+        .empty-state i {
+            font-size: 3rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        /* ========== MOBILE RESPONSIVE ========== */
+        @media (max-width: 850px) {
+            .sidebar-modern {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                top: auto;
+                width: 100%;
+                max-width: 100%;
+                flex-direction: row;
+                display: flex;
+                justify-content: space-evenly;
+                align-items: center;
+                border-radius: 0;
+                padding: 0.5rem 0.5rem;
+                margin: 0;
+                background: white;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                overflow-x: hidden;
+                box-sizing: border-box;
+            }
+
+            .sidebar-modern a {
+                flex-direction: column;
+                gap: 4px;
+                padding: 6px 8px;
+                font-size: 0.7rem;
+                margin: 0;
+                text-align: center;
+                flex: 1;
+                min-width: 0;
+                justify-content: center;
+                white-space: nowrap;
             }
 
             .sidebar-modern a i {
@@ -450,9 +485,17 @@
                 margin: 0;
             }
 
+            .sidebar-modern a span {
+                font-size: 0.65rem;
+            }
+
             .main-modern {
                 margin-left: 0;
                 padding: 1.2rem 1.2rem 5rem 1.2rem;
+            }
+
+            .logo-text {
+                display: none;
             }
 
             .detail-label {
@@ -463,18 +506,17 @@
             .day-summary {
                 gap: 8px;
                 margin-left: 8px;
+                flex-wrap: wrap;
             }
 
             .day-summary span {
                 font-size: 0.6rem;
             }
 
-            .logo-text {
-                display: none;
-            }
-
-            .logo-icon {
-                margin-right: 0;
+            .btn-pay, .btn-paid {
+                padding: 4px 12px;
+                font-size: 0.65rem;
+                margin-left: 8px;
             }
         }
     </style>
@@ -484,44 +526,41 @@
     <div id="loader">
         <div class="spinner-modern"></div>
     </div>
+
+    <!-- Navbar -->
     <div class="navbar-modern d-flex justify-content-between align-items-center">
         <div class="logo">
-            <div class="logo-icon"><img src="/static/logo.png" alt="HeavyDeals"></div><span
-                class="logo-text">Heavy<span>Deals</span></span>
+            <div class="logo-icon">
+                <img src="/static/logo.png" alt="HeavyDeals">
+            </div>
+            <span class="logo-text">Heavy<span>Deals</span></span>
         </div>
         <div class="dropdown">
-            <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#"
-                data-bs-toggle="dropdown" style="gap:12px;">
+            <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#" data-bs-toggle="dropdown" style="gap:12px;">
                 <span class="fw-semibold">{{ seller_name }}</span>
                 <div class="avatar-modern">{{ seller_name[0] if seller_name else 'S' }}</div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 mt-2">
-                <li><a class="dropdown-item py-2" href="/seller/dashboard"><i
-                            class="fas fa-chart-line me-2"></i>Dashboard</a></li>
-                <li><a class="dropdown-item py-2" href="/seller/orders"><i
-                            class="fas fa-shopping-bag me-2"></i>Orders</a></li>
-                <li><a class="dropdown-item py-2" href="/seller/products"><i class="fas fa-boxes me-2"></i>Products</a>
-                </li>
-                <li><a class="dropdown-item py-2" href="/seller/review-requests"><i
-                            class="fas fa-star me-2"></i>Reviews</a></li>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item text-danger py-2" href="/logout"><i
-                            class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/dashboard"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/orders"><i class="fas fa-shopping-bag me-2"></i>Orders</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/products"><i class="fas fa-boxes me-2"></i>Products</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/review-requests"><i class="fas fa-star me-2"></i>Reviews</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger py-2" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
             </ul>
         </div>
     </div>
+
+    <!-- Sidebar -->
     <div class="sidebar-modern">
-        <a href="/seller/dashboard" onclick="showLoader()"><i
-                class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+        <a href="/seller/dashboard" onclick="showLoader()"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
         <a href="/seller/review-requests" onclick="showLoader()"><i class="fas fa-star"></i><span>Review</span></a>
-        <a href="/seller/orders" onclick="showLoader()" class="active"><i
-                class="fas fa-shopping-bag"></i><span>Orders</span></a>
+        <a href="/seller/orders" onclick="showLoader()" class="active"><i class="fas fa-shopping-bag"></i><span>Orders</span></a>
         <a href="/seller/products" onclick="showLoader()"><i class="fas fa-boxes"></i><span>Products</span></a>
-        <a href="/seller/payment-history" onclick="showLoader()"><i
-                class="fas fa-rupee-sign"></i><span>Payments</span></a>
+        <a href="/seller/payment-history" onclick="showLoader()"><i class="fas fa-rupee-sign"></i><span>Payments</span></a>
     </div>
+
+    <!-- Main Content -->
     <div class="main-modern">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -529,6 +568,8 @@
                 <p class="text-muted small">Manage customer orders</p>
             </div>
         </div>
+
+        <!-- Stats Cards -->
         <div class="row g-3 mb-4">
             <div class="col-md-3 col-6">
                 <div class="stat-card">
@@ -559,6 +600,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Orders Table -->
         {% if orders and orders|length > 0 %}
         <div class="orders-table-container">
             <div class="table-responsive">
@@ -580,44 +623,75 @@
             </div>
         </div>
         {% else %}
-        <div class="empty-state"><i class="fas fa-inbox"></i>
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
             <h5 class="text-muted">No orders yet</h5>
             <p class="text-muted small">Orders will appear here</p>
         </div>
         {% endif %}
     </div>
+
+    <!-- Modal -->
     <div class="modal fade modal-modern" id="orderDetailModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title fw-bold" style="color: var(--navy);">Order Details</h5><button type="button"
-                        class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fw-bold" style="color: var(--navy);">Order Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="modalBody">
                     <div class="text-center py-4">Loading...</div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"
-                        style="border-radius:20px;">Close</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:20px;">Close</button>
+                </div>
             </div>
         </div>
     </div>
+
     <div style="height: 100px;"></div>
+
     <script>
         const ordersData = {{ orders | tojson | safe }};
-        function showLoader() { let loader = document.getElementById("loader"); if (loader) loader.style.display = "flex"; }
+        const UPI_ID = "bhalanijaynil@okaxis";
+        const UPI_NAME = "Jaynil";
 
+        function showLoader() {
+            let loader = document.getElementById("loader");
+            if (loader) loader.style.display = "flex";
+        }
+
+        // Simple UPI link - sirf total amount ke liye
+        function generateUPILink(amount, date, orderCount) {
+            const formattedDate = date ? new Date(date).toLocaleDateString('en-IN') : new Date().toLocaleDateString('en-IN');
+            const note = `Payment for ${orderCount} orders on ${formattedDate}`;
+            const encodedNote = encodeURIComponent(note);
+            return `upi://pay?pa=${UPI_ID}&pn=${UPI_NAME}&am=${amount}&cu=INR&tn=${encodedNote}`;
+        }
+
+        function handleGroupPayment(dateKey, totalAmount, orderCount) {
+            const upiLink = generateUPILink(totalAmount, dateKey, orderCount);
+            window.location.href = upiLink;
+        }
+
+        // Group orders by date - simple version
         function groupOrdersByDate(orders) {
             const grouped = {};
             orders.forEach(order => {
                 const dateKey = order.order_placed_at || 'Unknown Date';
                 if (!grouped[dateKey]) {
-                    grouped[dateKey] = { orders: [], totalAmount: 0, orderCount: 0, pendingApprovalCount: 0, displayDate: dateKey, paymentStatus: order.daily_payment_status || 'pending' };
+                    grouped[dateKey] = {
+                        orders: [],
+                        totalAmount: 0,
+                        orderCount: 0,
+                        pendingApprovalCount: 0,
+                        displayDate: dateKey
+                    };
                 }
                 grouped[dateKey].orders.push(order);
                 grouped[dateKey].totalAmount += parseFloat(order.order_amount) || 0;
                 grouped[dateKey].orderCount++;
                 if (order.status === 'review_submitted') grouped[dateKey].pendingApprovalCount++;
-                if (order.daily_payment_status === 'paid') grouped[dateKey].paymentStatus = 'paid';
             });
             return grouped;
         }
@@ -625,6 +699,7 @@
         function renderOrdersTable() {
             const tbody = document.getElementById('ordersTableBody');
             if (!tbody) return;
+
             const grouped = groupOrdersByDate(ordersData);
             const sortedDates = Object.keys(grouped).sort((a, b) => {
                 if (a === 'Unknown Date') return 1;
@@ -634,13 +709,31 @@
                 const bDate = `${bParts[2]}-${bParts[1]}-${bParts[0]}`;
                 return bDate.localeCompare(aDate);
             });
+
             let html = '', globalIndex = 0;
+
             sortedDates.forEach(dateKey => {
                 const group = grouped[dateKey];
                 const safeId = dateKey.replace(/[^a-zA-Z0-9]/g, '_');
                 const displayDate = group.displayDate;
-                let amountColor = group.paymentStatus === 'paid' ? 'style="color: #16a34a; font-weight: 700;"' : 'style="color: var(--orange); font-weight: 700;"';
-                html += `<tr class="day-group-header" onclick="toggleDayGroup('${safeId}')"><td><i class="fas fa-chevron-right toggle-icon" id="icon_${safeId}"></i></td><td colspan="7"><strong><i class="fas fa-calendar-day me-2"></i>${displayDate}</strong><div class="day-summary"><span><i class="fas fa-shopping-bag me-1"></i>${group.orderCount} Orders</span><span ${amountColor}><i class="fas fa-rupee-sign me-1"></i>${group.totalAmount.toLocaleString('en-IN')}</span>${group.pendingApprovalCount > 0 ? `<span class="pending-approval-badge"><i class="fas fa-hourglass-half me-1"></i>${group.pendingApprovalCount} Pending Approval</span>` : ''}</div></div></td></tr>`;
+
+                // Date group header row with Pay button
+                html += `<tr class="day-group-header" onclick="toggleDayGroup('${safeId}')">
+                            <td><i class="fas fa-chevron-right toggle-icon" id="icon_${safeId}"></i></td>
+                            <td colspan="7">
+                                <strong><i class="fas fa-calendar-day me-2"></i>${displayDate}</strong>
+                                <div class="day-summary">
+                                    <span><i class="fas fa-shopping-bag me-1"></i>${group.orderCount} Orders</span>
+                                    <span style="color:var(--orange);font-weight:700;"><i class="fas fa-rupee-sign me-1"></i>₹${group.totalAmount.toLocaleString('en-IN')}</span>
+                                    ${group.pendingApprovalCount > 0 ? `<span class="pending-approval-badge"><i class="fas fa-hourglass-half me-1"></i>${group.pendingApprovalCount} Pending Approval</span>` : ''}
+                                </div>
+                                <button class="btn-pay" onclick="event.stopPropagation(); handleGroupPayment('${dateKey}', ${group.totalAmount}, ${group.orderCount})">
+                                    <i class="fas fa-google-pay"></i> Pay ₹${group.totalAmount.toLocaleString('en-IN')}
+                                </button>
+                            </td>
+                          </tr>`;
+
+                // Individual order rows
                 group.orders.forEach(order => {
                     let statusHtml = '';
                     if (order.status === 'pending') statusHtml = '<span class="status-badge status-pending">Pending</span>';
@@ -649,15 +742,26 @@
                     else if (order.status === 'paid') statusHtml = '<span class="status-badge status-paid">Paid</span>';
                     else if (order.status === 'rejected') statusHtml = '<span class="status-badge status-rejected">Rejected</span>';
                     else statusHtml = '<span class="status-badge status-pending">' + order.status + '</span>';
-                    html += `<tr class="day-orders-row day-group-${safeId}" style="display:none;"><td></td><td><b>${order.order_id || 'N/A'}</b></td><td>${order.product_name ? (order.product_name.substring(0, 35) + (order.product_name.length > 35 ? '...' : '')) : 'N/A'}</td><td>${order.buyer_name || 'N/A'}</td><td>₹${order.order_amount || 0}</td><td style="color:var(--orange);font-weight:500;">₹${order.refund_amount || 0}</td><td>${statusHtml}</td><td><button class="btn-detail" onclick="showOrderDetails(${globalIndex})"><i class="fas fa-eye"></i> View</button></td></td>`;
+
+                    html += `<tr class="day-orders-row day-group-${safeId}" style="display:none;">
+                                <td></td>
+                                <td><b>${order.order_id || 'N/A'}</b></td>
+                                <td>${order.product_name ? (order.product_name.substring(0, 35) + (order.product_name.length > 35 ? '...' : '')) : 'N/A'}</td>
+                                <td>${order.buyer_name || 'N/A'}</td>
+                                <td>₹${order.order_amount || 0}</td>
+                                <td style="color:var(--orange);font-weight:500;">₹${order.refund_amount || 0}</td>
+                                <td>${statusHtml}</td>
+                                <td><button class="btn-detail" onclick="showOrderDetails(${globalIndex})"><i class="fas fa-eye"></i> View</button></td>
+                              </tr>`;
                     globalIndex++;
                 });
             });
+
             tbody.innerHTML = html;
             updateStats();
         }
 
-        window.toggleDayGroup = function (safeId) {
+        window.toggleDayGroup = function(safeId) {
             const rows = document.querySelectorAll(`.day-group-${safeId}`);
             const icon = document.getElementById(`icon_${safeId}`);
             if (rows.length === 0) return;
@@ -669,7 +773,9 @@
         function showOrderDetails(index) {
             const order = ordersData[index];
             if (!order) return;
+
             const modalBody = document.getElementById('modalBody');
+
             let statusBadge = '';
             if (order.status === 'pending') statusBadge = '<span class="status-badge status-pending">Pending</span>';
             else if (order.status === 'review_submitted') statusBadge = '<span class="status-badge status-review_submitted">Review Submitted</span>';
@@ -677,34 +783,74 @@
             else if (order.status === 'paid') statusBadge = '<span class="status-badge status-paid">Paid</span>';
             else if (order.status === 'rejected') statusBadge = '<span class="status-badge status-rejected">Rejected</span>';
             else statusBadge = '<span class="status-badge status-pending">' + order.status + '</span>';
+
             let orderDate = order.order_placed_at || 'Unknown';
             if (orderDate && orderDate.includes(' ')) orderDate = orderDate.split(' ')[0];
+
             let linksHtml = '';
             if (order.order_screenshot) linksHtml += `<a href="${order.order_screenshot}" target="_blank" class="link-item"><i class="fas fa-shopping-cart"></i> Order SS</a>`;
             if (order.delivered_screenshot) linksHtml += `<a href="${order.delivered_screenshot}" target="_blank" class="link-item"><i class="fas fa-truck"></i> Delivered SS</a>`;
             if (order.review_screenshot) linksHtml += `<a href="${order.review_screenshot}" target="_blank" class="link-item"><i class="fas fa-star"></i> Review SS</a>`;
             if (order.review_link) linksHtml += `<a href="${order.review_link}" target="_blank" class="link-item"><i class="fas fa-link"></i> Review Link</a>`;
             if (linksHtml === '') linksHtml = '<span class="text-muted small">No attachments</span>';
-            let rejectionHtml = (order.status === 'rejected' && order.rejection_reason) ? `<div class="alert alert-danger mt-3"><strong><i class="fas fa-info-circle me-1"></i>Rejection Reason:</strong><br>${order.rejection_reason}</div>` : '';
-            modalBody.innerHTML = `<div class="row"><div class="col-12"><table class="table table-sm table-borderless"><tr><td width="120"><strong>Order ID:</strong></td><td>${order.order_id}</td></tr><tr><td><strong>Product:</strong></td><td>${order.product_name}</td></tr><tr><td><strong>Buyer:</strong></td><td>${order.buyer_name}</td></tr><tr><td><strong>Amount:</strong></td><td>₹${order.order_amount}</td></tr><tr><td><strong>Refund:</strong></td><td style="color:var(--orange);">₹${order.refund_amount}</td></tr><tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr><tr><td><strong>Date:</strong></td><td>${orderDate}</td></tr></table><hr class="my-2"><div class="link-group">${linksHtml}</div>${rejectionHtml}</div></div>`;
+
+            let rejectionHtml = (order.status === 'rejected' && order.rejection_reason) ?
+                `<div class="alert alert-danger mt-3">
+                    <strong><i class="fas fa-info-circle me-1"></i>Rejection Reason:</strong><br>
+                    ${order.rejection_reason}
+                </div>` : '';
+
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-12">
+                        <table class="table table-sm table-borderless">
+                            <tr><td width="120"><strong>Order ID:</strong></td><td>${order.order_id}</td></tr>
+                            <tr><td><strong>Product:</strong></td><td>${order.product_name}</td></tr>
+                            <tr><td><strong>Buyer:</strong></td><td>${order.buyer_name}</td></tr>
+                            <tr><td><strong>Amount:</strong></td><td>₹${order.order_amount}</td></tr>
+                            <tr><td><strong>Refund:</strong></td><td style="color:var(--orange);">₹${order.refund_amount}</td></tr>
+                            <tr><td><strong>Status:</strong></td><td>${statusBadge}</td></tr>
+                            <tr><td><strong>Date:</strong></td><td>${orderDate}</td></tr>
+                        </table>
+                        <hr class="my-2">
+                        <div class="link-group">${linksHtml}</div>
+                        ${rejectionHtml}
+                    </div>
+                </div>
+            `;
+
             new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
         }
 
         function updateStats() {
             let totalOrders = 0, reviewSubmitted = 0, pendingApproval = 0, approvedOrders = 0;
+
             ordersData.forEach(order => {
                 totalOrders++;
-                if (order.status === 'review_submitted') { reviewSubmitted++; pendingApproval++; }
-                else if (order.status === 'approved' || order.status === 'paid') approvedOrders++;
+                if (order.status === 'review_submitted') {
+                    reviewSubmitted++;
+                    pendingApproval++;
+                } else if (order.status === 'approved' || order.status === 'paid') {
+                    approvedOrders++;
+                }
             });
+
             document.getElementById('totalOrdersCount').innerText = totalOrders;
             document.getElementById('reviewSubmittedCount').innerText = reviewSubmitted;
             document.getElementById('pendingApprovalCount').innerText = pendingApproval;
             document.getElementById('approvedOrdersCount').innerText = approvedOrders;
         }
 
-        window.addEventListener("load", function () { document.getElementById("loader").style.display = "none"; if (ordersData && ordersData.length > 0) renderOrdersTable(); });
-        window.addEventListener("pageshow", function (event) { let loader = document.getElementById("loader"); if (loader) loader.style.display = "none"; if (event.persisted) loader.style.display = "none"; });
+        window.addEventListener("load", function() {
+            document.getElementById("loader").style.display = "none";
+            if (ordersData && ordersData.length > 0) renderOrdersTable();
+        });
+
+        window.addEventListener("pageshow", function(event) {
+            let loader = document.getElementById("loader");
+            if (loader) loader.style.display = "none";
+            if (event.persisted) loader.style.display = "none";
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
