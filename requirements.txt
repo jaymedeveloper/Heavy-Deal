@@ -1,4 +1,0 @@
-Flask
-gunicorn
-cloudinary
-psycopg2-binary
