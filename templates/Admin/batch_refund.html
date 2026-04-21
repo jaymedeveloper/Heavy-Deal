@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Refund | Admin - HeavyDeals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0a192f;
+            --navy-light: #112240;
+            --orange: #f97316;
+            --orange-light: #ffedd5;
+            --white: #ffffff;
+            --gray: #f8fafc;
+            --green: #16a34a;
+            --green-light: #dcfce7;
+            --yellow: #d97706;
+            --yellow-light: #fef3c7;
+            --blue: #2563eb;
+            --blue-light: #dbeafe;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: var(--navy);
+            min-height: 100vh;
+            position: fixed;
+            padding: 1.5rem;
+        }
+
+        .sidebar h4 {
+            color: white;
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--orange);
+        }
+
+        .main-content {
+            margin-left: 280px;
+            padding: 1.5rem;
+        }
+
+        .batch-card {
+            background: white;
+            border-radius: 24px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .batch-header {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            padding: 1rem 1.5rem;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .batch-header:hover {
+            background: linear-gradient(135deg, var(--navy-light), var(--navy));
+        }
+
+        .batch-stats {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .batch-stats span {
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .toggle-icon {
+            transition: transform 0.2s;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .batch-details {
+            display: none;
+            padding: 1.5rem;
+        }
+
+        .batch-details.show {
+            display: block;
+        }
+
+        .table-custom {
+            margin-bottom: 0;
+        }
+
+        .table-custom thead th {
+            background: var(--gray);
+            color: var(--navy);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-custom tbody td {
+            padding: 0.9rem 1rem;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-custom tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .status-approved {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-paid {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .btn-paid {
+            background: var(--orange);
+            border: none;
+            padding: 6px 16px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-paid:hover {
+            background: #ea580c;
+            transform: scale(1.02);
+        }
+
+        .btn-paid:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                min-height: auto;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h4><i class="fas fa-fire me-2" style="color: var(--orange);"></i>HeavyDeals</h4>
+        <a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+        <a href="/admin/sellers"><i class="fas fa-users"></i> Manage Sellers</a>
+        <a href="/admin/daily-payments"><i class="fas fa-rupee-sign"></i> Daily Payments</a>
+        <a href="/admin/batch-refund" class="active"><i class="fas fa-money-bill-wave"></i> Batch Refund</a>
+        <a href="/admin/payment-history"><i class="fas fa-history"></i> Payment History</a>
+        <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+        <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1" style="color: var(--navy);"><i class="fas fa-money-bill-wave me-2"
+                        style="color: var(--orange);"></i>Batch Refund to Buyers</h2>
+                <p class="text-muted">View all batches and mark orders as paid (50% refund to buyers)</p>
+            </div>
+        </div>
+
+        {% if batches and batches|length > 0 %}
+        {% for batch in batches %}
+        <div class="batch-card">
+            <div class="batch-header" onclick="toggleBatch('batch-{{ batch.id }}')">
+                <div>
+                    <strong><i class="fas fa-receipt me-2"></i>Batch: {{ batch.batch_id }}</strong>
+                    <div class="small opacity-50 mt-1">{{ batch.created_at }}</div>
+                    <div class="small opacity-75 mt-1">Seller: {{ batch.seller_name }}</div>
+                </div>
+                <div class="batch-stats">
+                    <span><i class="fas fa-box me-1"></i>{{ batch.total_orders }} Orders</span>
+                    <span><i class="fas fa-rupee-sign me-1"></i>Total: ₹{{ batch.total_refund_amount }}</span>
+                    <span><i class="fas fa-user me-1"></i>{{ batch.unique_buyers }} Buyers</span>
+                    {% if batch.status == 'completed' %}
+                    <span class="status-badge status-paid"><i class="fas fa-check-circle me-1"></i>Completed</span>
+                    {% else %}
+                    <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>{{ batch.status }}</span>
+                    {% endif %}
+                    <i class="fas fa-chevron-down toggle-icon" id="icon-batch-{{ batch.id }}"></i>
+                </div>
+            </div>
+            <div class="batch-details" id="batch-{{ batch.id }}">
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Buyer Name</th>
+                                <th>Buyer Email</th>
+                                <th>Product</th>
+                                <th>Refund (100%)</th>
+                                <th>Buyer Gets (50%)</th>
+                                <th>Order Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in batch.order_items %}
+                            <tr id="row-{{ item.order_id }}">
+                                <td><b>{{ item.order_number }}</b></td>
+                                <td>{{ item.buyer_name }}</td>
+                                <td>{{ item.buyer_email }}</td>
+                                <td>{{ item.product_name[:40] }}{% if item.product_name|length > 40 %}...{% endif %}
+                                </td>
+                                <td class="refund-amount">₹{{ "%.2f"|format(item.refund_amount) }}</td>
+                                <td class="refund-amount">₹{{ "%.2f"|format(item.refund_amount / 2) }}</td>
+                                <!-- In batch_refund.html, change this section (around line 180-200) -->
+
+                                <td>
+                                    {% if item.status == 'approved' %}
+                                    <span class="status-badge status-approved"><i
+                                            class="fas fa-check-circle me-1"></i>Approved</span>
+                                    {% elif item.status == 'paid' %}
+                                    <span class="status-badge status-paid"><i
+                                            class="fas fa-rupee-sign me-1"></i>Paid</span>
+                                    {% else %}
+                                    <span class="status-badge status-pending">{{ item.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.status == 'approved' %}
+                                    <button class="btn-paid"
+                                        onclick="markAsPaid({{ item.order_id }}, '{{ batch.batch_id }}')">
+                                        <i class="fas fa-rupee-sign me-1"></i>Mark as Paid (50%)
+                                    </button>
+                                    {% elif item.status == 'paid' %}
+                                    <button class="btn-paid" disabled>
+                                        <i class="fas fa-check me-1"></i>Already Paid
+                                    </button>
+                                    {% else %}
+                                    <button class="btn-paid" disabled>
+                                        <i class="fas fa-hourglass me-1"></i>Pending Approval
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <h5 class="text-muted">No batches found</h5>
+            <p class="text-muted small">When sellers approve reviews, batches will appear here</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function toggleBatch(batchId) {
+            const container = document.getElementById(batchId);
+            const icon = document.getElementById('icon-' + batchId);
+
+            if (container.classList.contains('show')) {
+                container.classList.remove('show');
+                icon.classList.remove('rotated');
+            } else {
+                container.classList.add('show');
+                icon.classList.add('rotated');
+            }
+        }
+
+        function markAsPaid(orderId, batchId) {
+            if (!confirm(`Process 50% refund for this order?`)) {
+                return;
+            }
+
+            fetch('/admin/batch-refund/mark-paid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    order_id: orderId,
+                    batch_id: batchId
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ Refund processed successfully!\n\nAmount: ${data.amount}\nOrder Status: Paid`);
+                        location.reload();
+                    } else {
+                        alert('❌ Error: ' + data.error);
+                    }
+                })
+                .catch(err => {
+                    alert('Network error: ' + err.message);
+                });
+        }
+
+        // Auto-expand batches with pending approvals
+        document.addEventListener('DOMContentLoaded', function () {
+            const pendingApprovals = document.querySelectorAll('.status-approved');
+            pendingApprovals.forEach(badge => {
+                const batchCard = badge.closest('.batch-card');
+                if (batchCard) {
+                    const container = batchCard.querySelector('.batch-details');
+                    const icon = batchCard.querySelector('.toggle-icon');
+                    if (container && icon && !container.classList.contains('show')) {
+                        container.classList.add('show');
+                        icon.classList.add('rotated');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

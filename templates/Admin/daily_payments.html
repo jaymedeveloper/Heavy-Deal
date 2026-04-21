@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Payments | Admin - HeavyDeals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --navy: #0a192f; --navy-light: #112240; --orange: #f97316; --orange-light: #ffedd5; --orange-dark: #ea580c; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--navy);
+            min-height: 100vh;
+            position: fixed;
+            padding: 1.5rem;
+        }
+        .sidebar h4 { color: white; margin-bottom: 2rem; font-weight: 700; }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active { background: rgba(249,115,22,0.15); color: var(--orange); }
+        
+        .main-content { margin-left: 280px; padding: 1.5rem; }
+        
+        .seller-group {
+            background: white;
+            border-radius: 24px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .seller-header {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            padding: 1rem 1.5rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .seller-header:hover {
+            background: linear-gradient(135deg, var(--navy-light), var(--navy));
+        }
+        .seller-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .seller-header h4 i {
+            color: var(--orange);
+            margin-right: 10px;
+        }
+        .seller-stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .seller-stats span {
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .pending-badge {
+            background: #fef3c7 !important;
+            color: #d97706 !important;
+        }
+        .toggle-icon {
+            transition: transform 0.2s;
+            font-size: 1rem;
+        }
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+        
+        .payments-table-container {
+            padding: 0;
+            display: none;
+        }
+        .payments-table-container.show {
+            display: block;
+        }
+        .table-custom {
+            margin-bottom: 0;
+        }
+        .table-custom thead th {
+            background: #f8fafc;
+            color: var(--navy);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table-custom tbody td {
+            padding: 0.9rem 1rem;
+            vertical-align: middle;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .table-custom tbody tr:hover {
+            background: #f8fafc;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .status-pending { background: #fef3c7; color: #d97706; }
+        .status-paid { background: #dcfce7; color: #16a34a; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
+        
+        .btn-approve {
+            background: #22c55e;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-reject {
+            background: #ef4444;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 30px;
+            color: white;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-approve:hover { background: #16a34a; transform: scale(1.02); }
+        .btn-reject:hover { background: #dc2626; transform: scale(1.02); }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 0.9rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        .stat-icon { width: 32px; height: 32px; background: var(--orange-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
+        .stat-icon i { font-size: 1rem; color: var(--orange); }
+        .stat-title { font-size: 0.65rem; text-transform: uppercase; font-weight: 600; color: #64748b; }
+        .stat-value { font-size: 1.3rem; font-weight: 700; color: var(--navy); }
+        
+        .empty-state { text-align: center; padding: 3rem; }
+        .empty-state i { font-size: 4rem; color: #cbd5e1; margin-bottom: 1rem; }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; position: relative; min-height: auto; }
+            .main-content { margin-left: 0; }
+            .seller-stats { gap: 8px; }
+            .seller-stats span { font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h4><i class="fas fa-fire me-2" style="color: var(--orange);"></i>HeavyDeals</h4>
+    <a href="/admin/dashboard"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/admin/sellers"><i class="fas fa-users"></i> Manage Sellers</a>
+    <a href="/admin/daily-payments" class="active"><i class="fas fa-rupee-sign"></i> Daily Payments</a>
+    <a href="/admin/payment-history"><i class="fas fa-history"></i> Payment History</a>
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+    <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1" style="color: var(--navy);">Daily Payments</h2>
+            <p class="text-muted">Manage seller end-of-day payments</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-title">Pending Payments</div>
+                <div class="stat-value" id="pendingCount">0</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-title">Paid</div>
+                <div class="stat-value" id="paidCount">0</div>
+            </div>
+        </div>
+        <div class="col-md-4 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-title">Total Amount</div>
+                <div class="stat-value" id="totalAmount">₹0</div>
+            </div>
+        </div>
+    </div>
+
+    {% if sellers and sellers|length > 0 %}
+        {% for seller in sellers %}
+        <div class="seller-group">
+            <div class="seller-header" onclick="toggleSeller('seller_{{ seller.id }}')">
+                <div>
+                    <h4><i class="fas fa-store"></i> {{ seller.name }}</h4>
+                    <small style="opacity: 0.7;">{{ seller.username }} • {{ seller.email }} • {{ seller.phone }}</small>
+                </div>
+                <div class="seller-stats">
+                    {% set pending_count = seller.payments|selectattr('status', 'equalto', 'pending')|list|length %}
+                    {% if pending_count > 0 %}
+                    <span class="pending-badge"><i class="fas fa-clock me-1"></i>{{ pending_count }} Pending</span>
+                    {% endif %}
+                    <span><i class="fas fa-calendar me-1"></i>{{ seller.payments|length }} Days</span>
+                    <span><i class="fas fa-rupee-sign me-1"></i>{{ seller.payments|sum(attribute='total_amount')|round|int }}</span>
+                    <i class="fas fa-chevron-down toggle-icon" id="icon_seller_{{ seller.id }}"></i>
+                </div>
+            </div>
+            <div class="payments-table-container" id="seller_{{ seller.id }}">
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Orders</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Paid On</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in seller.payments %}
+                            <tr>
+                                <td>{{ p.payment_date }}</td>
+                                <td>{{ p.order_count }}</td>
+                                <td style="color: var(--orange); font-weight: 600;">₹{{ p.total_amount }}</td>
+                                <td>
+                                    {% if p.status == 'pending' %}
+                                    <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
+                                    {% elif p.status == 'paid' %}
+                                    <span class="status-badge status-paid"><i class="fas fa-check-circle me-1"></i>Paid</span>
+                                    {% elif p.status == 'rejected' %}
+                                    <span class="status-badge status-rejected"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                                    {% else %}
+                                    <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ p.paid_at }}</td>
+                                <td>
+                                    {% if p.status == 'pending' or p.status is none %}
+                                    <form method="POST" action="/admin/payment/create" style="display: inline-block;">
+                                        <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                                        <input type="hidden" name="payment_date" value="{{ p.payment_date }}">
+                                        <input type="hidden" name="total_amount" value="{{ p.total_amount }}">
+                                        <input type="hidden" name="order_count" value="{{ p.order_count }}">
+                                        <button type="submit" class="btn-approve" onclick="return confirm('Mark payment of ₹{{ p.total_amount }} from {{ seller.name }} as PAID?')">
+                                            <i class="fas fa-check"></i> Mark as Paid
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                 </td>
+                             </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-users-slash"></i>
+        <h5 class="text-muted">No sellers found</h5>
+        <p class="text-muted small">Sellers will appear here once they register and have orders</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleSeller(sellerId) {
+        const container = document.getElementById(sellerId);
+        const icon = document.getElementById('icon_' + sellerId);
+        
+        if (container.classList.contains('show')) {
+            container.classList.remove('show');
+            icon.classList.remove('rotated');
+        } else {
+            container.classList.add('show');
+            icon.classList.add('rotated');
+        }
+    }
+
+    // Calculate stats
+    let totalPending = 0, totalPaid = 0, grandTotal = 0;
+    {% for seller in sellers %}
+        {% for p in seller.payments %}
+            {% if p.status == 'pending' or p.status is none %}totalPending++;{% endif %}
+            {% if p.status == 'paid' %}totalPaid++;{% endif %}
+            grandTotal += {{ p.total_amount }};
+        {% endfor %}
+    {% endfor %}
+    
+    document.getElementById('pendingCount').innerText = totalPending;
+    document.getElementById('paidCount').innerText = totalPaid;
+    document.getElementById('totalAmount').innerText = '₹' + grandTotal.toLocaleString('en-IN');
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const sellersWithPending = document.querySelectorAll('.pending-badge');
+        sellersWithPending.forEach(badge => {
+            const sellerGroup = badge.closest('.seller-group');
+            if (sellerGroup) {
+                const container = sellerGroup.querySelector('.payments-table-container');
+                const icon = sellerGroup.querySelector('.toggle-icon');
+                if (container && icon && !container.classList.contains('show')) {
+                    container.classList.add('show');
+                    icon.classList.add('rotated');
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>
