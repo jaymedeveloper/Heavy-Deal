@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" type="image/png" href="/static/title_logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | HeavyDeals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --navy: #0a192f; --orange: #f97316; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
+        .sidebar {
+            width: 280px;
+            background: var(--navy);
+            min-height: 100vh;
+            position: fixed;
+            padding: 1.5rem;
+        }
+        .sidebar h4 { color: white; margin-bottom: 2rem; font-weight: 700; }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #94a3b8;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        .sidebar a:hover, .sidebar a.active { background: rgba(249,115,22,0.15); color: var(--orange); }
+        .main-content { margin-left: 280px; padding: 1.5rem; }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: #ffedd5;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+        .stat-icon i { font-size: 1.5rem; color: var(--orange); }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--navy); }
+        .stat-label { color: #64748b; font-size: 0.85rem; }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; position: relative; min-height: auto; }
+            .main-content { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <h4><i class="fas fa-fire me-2" style="color: var(--orange);"></i>HeavyDeals</h4>
+    <a href="/admin/dashboard" class="active"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a href="/admin/sellers"><i class="fas fa-users"></i> Manage Sellers</a>
+    <a href="/admin/daily-payments"><i class="fas fa-rupee-sign"></i> Daily Payments</a>
+    <a href="/admin/payment-history"><i class="fas fa-history"></i> Payment History</a>
+    <a href="/admin/batch-refund"><i class="fas fa-money-bill-wave"></i> Batch Refund</a>
+    <!-- Add this line in sidebar -->
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 1rem 0;">
+    <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+<div class="main-content">
+    <h2 class="fw-bold mb-4">Admin Dashboard</h2>
+    <div class="row g-4">
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-value">{{ stats.pending_sellers }}</div>
+                <div class="stat-label">Pending Sellers</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value">{{ stats.approved_sellers }}</div>
+                <div class="stat-label">Approved Sellers</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-value">{{ stats.total_buyers }}</div>
+                <div class="stat-label">Total Buyers</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-box"></i></div>
+                <div class="stat-value">{{ stats.total_products }}</div>
+                <div class="stat-label">Total Products</div>
+            </div>
+        </div>
+    </div>
+    {% if stats.pending_sellers > 0 %}
+    <div class="alert alert-warning mt-4">
+        <i class="fas fa-bell me-2"></i>
+        You have <strong>{{ stats.pending_sellers }}</strong> pending seller registration request(s).
+        <a href="/admin/sellers" class="alert-link ms-2">Review Now →</a>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>

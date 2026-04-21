@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="icon" type="image/png" href="/static/title_logo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Buyer Portal | HeavyDeals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy: #0a192f;
+            --navy-light: #112240;
+            --orange: #f97316;
+            --orange-dark: #ea580c;
+            --orange-light: #ffedd5;
+            --white: #ffffff;
+            --gray: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 48px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo-icon {
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .logo-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .logo-icon img {
+            border-radius: 10px;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--navy), var(--orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-align: center;
+        }
+
+        .tagline {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 0.25rem;
+        }
+
+        .tabs-modern {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--gray);
+            padding: 0.5rem;
+            border-radius: 60px;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            border: none;
+            padding: 0.8rem 1rem;
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #64748b;
+        }
+
+        .tab-btn i {
+            margin-right: 8px;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            color: var(--white);
+            box-shadow: 0 4px 12px rgba(10, 25, 47, 0.2);
+        }
+
+        .form-container.hidden {
+            display: none;
+        }
+
+        .input-group-modern {
+            position: relative;
+            margin-bottom: 1.2rem;
+        }
+
+        .input-group-modern i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            z-index: 2;
+        }
+
+        .input-modern {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            border: 2px solid #e2e8f0;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            background: var(--white);
+        }
+
+        .input-modern:focus {
+            outline: none;
+            border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+        }
+
+        .btn-gradient {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--orange), var(--orange-dark));
+            border: none;
+            border-radius: 60px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
+        }
+
+        .alert-modern {
+            background: var(--orange-light);
+            border-radius: 60px;
+            padding: 12px 18px;
+            color: var(--orange-dark);
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .divider {
+            text-align: center;
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+
+        .divider::after {
+            right: 0;
+        }
+
+        .divider span {
+            background: var(--white);
+            padding: 0 12px;
+            color: #94a3b8;
+            font-size: 0.75rem;
+        }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 12px;
+            background: var(--white);
+            border: 2px solid #e2e8f0;
+            border-radius: 60px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--navy);
+            transition: all 0.3s;
+        }
+
+        .google-btn i {
+            font-size: 1.2rem;
+        }
+
+        .google-btn:hover {
+            background: var(--gray);
+            border-color: var(--orange);
+            transform: translateY(-2px);
+        }
+
+        .footer-links {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.8rem;
+        }
+
+        .footer-links a {
+            color: var(--orange);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 1.5rem;
+                border-radius: 32px;
+            }
+
+            .logo-icon {
+                width: 55px;
+                height: 55px;
+            }
+
+            .logo-text {
+                font-size: 1.5rem;
+            }
+
+            .tab-btn {
+                padding: 0.6rem 0.8rem;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-card">
+        <div class="logo-wrapper">
+            <div class="logo-icon">
+                <img src="/static/logo.png" alt="HeavyDeals"
+                    style="width: 100%; height: 100%; object-fit: contain; border-radius: 10px;">
+            </div>
+            <h1 class="logo-text">Heavy Deals</h1>
+            <p class="tagline">Buyer Portal • Earn Rewards</p>
+        </div>
+        {% if msg %}
+        <div class="alert-modern"><i class="fas fa-info-circle"></i> {{ msg }}</div>
+        {% endif %}
+        <div class="tabs-modern">
+            <button class="tab-btn active" id="loginTabBtn" onclick="switchTab('login')"><i
+                    class="fas fa-sign-in-alt"></i> Login</button>
+            <button class="tab-btn" id="registerTabBtn" onclick="switchTab('register')"><i class="fas fa-user-plus"></i>
+                Register</button>
+        </div>
+        <form method="POST" id="loginForm" class="form-container">
+            <input type="hidden" name="action" value="login">
+            <div class="input-group-modern"><i class="fas fa-envelope"></i><input type="email" name="email"
+                    id="loginEmail" class="input-modern" placeholder="Email Address" required></div>
+            <div class="input-group-modern"><i class="fas fa-lock"></i><input type="password" name="password"
+                    id="loginPassword" class="input-modern" placeholder="Password" required></div>
+            <button type="submit" class="btn-gradient"><i class="fas fa-arrow-right-to-bracket"></i> Login to
+                Account</button>
+        </form>
+        <form method="POST" id="registerForm" class="form-container hidden">
+            <input type="hidden" name="action" value="register">
+            <div class="input-group-modern"><i class="fas fa-user"></i><input type="text" name="name" id="regName"
+                    class="input-modern" placeholder="Full Name" required></div>
+            <div class="input-group-modern"><i class="fas fa-envelope"></i><input type="email" name="email"
+                    id="regEmail" class="input-modern" placeholder="Email Address" required></div>
+            <div class="input-group-modern"><i class="fas fa-lock"></i><input type="password" name="password"
+                    id="regPassword" class="input-modern" placeholder="Password" required></div>
+            <div class="input-group-modern"><i class="fas fa-rupee-sign"></i><input type="text" name="upi_id"
+                    id="regUpiId" class="input-modern" placeholder="UPI ID (e.g., name@okhdfcbank)" required></div>
+            <button type="submit" class="btn-gradient"><i class="fas fa-user-check"></i> Create Account</button>
+        </form>
+        <div class="divider"><span>or continue with</span></div>
+        <a href="/buyer/google/login" class="google-btn"><i class="fab fa-google"></i> Sign in with Google</a>
+        <div class="footer-links"><a href="/">← Back to Home</a></div>
+    </div>
+    <script>
+        function switchTab(tab) {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const loginTab = document.getElementById('loginTabBtn');
+            const registerTab = document.getElementById('registerTabBtn');
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden');
+                registerForm.classList.add('hidden');
+                loginTab.classList.add('active');
+                registerTab.classList.remove('active');
+            } else {
+                registerForm.classList.remove('hidden');
+                loginForm.classList.add('hidden');
+                registerTab.classList.add('active');
+                loginTab.classList.remove('active');
+            }
+        }
+        function isValidEmail(email) { return /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/.test(email); }
+        function showAlert(message, type) {
+            const existingAlert = document.querySelector('.alert-modern');
+            if (existingAlert && !existingAlert.innerHTML.includes('{{ msg }}')) existingAlert.remove();
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert-modern';
+            alertDiv.style.background = type === 'error' ? '#fee2e2' : '#ffedd5';
+            alertDiv.style.color = type === 'error' ? '#dc2626' : '#ea580c';
+            alertDiv.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i> ${message}`;
+            document.querySelector('.auth-card').insertBefore(alertDiv, document.querySelector('.tabs-modern'));
+            setTimeout(() => { alertDiv.style.opacity = '0'; setTimeout(() => alertDiv.remove(), 300); }, 4000);
+        }
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            if (!email || !password) { e.preventDefault(); showAlert('Please fill all fields', 'error'); return false; }
+            if (!isValidEmail(email)) { e.preventDefault(); showAlert('Please enter a valid email address', 'error'); return false; }
+            return true;
+        });
+        document.getElementById('registerForm').addEventListener('submit', function (e) {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            if (!name || !email || !password) { e.preventDefault(); showAlert('Please fill all fields', 'error'); return false; }
+            if (!isValidEmail(email)) { e.preventDefault(); showAlert('Please enter a valid email address', 'error'); return false; }
+            if (password.length < 6) { e.preventDefault(); showAlert('Password must be at least 6 characters', 'error'); return false; }
+            return true;
+        });
+    </script>
+</body>
+
+</html>
