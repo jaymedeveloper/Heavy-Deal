@@ -61,7 +61,7 @@
         <div class="d-flex justify-content-between align-items-start">
             <div>
                 <span class="badge bg-secondary mb-1">{{ product.brand }}</span>
-                <h5 class="fw-bold mb-1">{{ product.name }}</h5>
+                <h5 class="fw-bold mb-1">{{ product.name[:20] }}</h5>
                 <p class="mb-0"><i class="fas fa-gift me-1" style="color: var(--orange);"></i>Reward: ₹{{ (product.refund/2)|int }}</p>
             </div>
             <div>
