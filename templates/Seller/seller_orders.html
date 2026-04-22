@@ -36,6 +36,7 @@
             overflow-x: hidden;
             width: 100%;
             max-width: 100%;
+            padding-top: 80px;
         }
 
         html {
@@ -44,12 +45,15 @@
             max-width: 100%;
         }
 
-        /* Navbar Styles */
+        /* Navbar Styles - Fixed */
         .navbar-modern {
             background: var(--navy);
             padding: 1rem 2rem;
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
             z-index: 1000;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
@@ -446,6 +450,10 @@
 
         /* ========== MOBILE RESPONSIVE ========== */
         @media (max-width: 850px) {
+            body {
+                padding-top: 70px;
+            }
+
             .sidebar-modern {
                 position: fixed;
                 bottom: 0;
@@ -535,7 +543,7 @@
             <div class="logo-icon">
                 <img src="/static/logo.png" alt="HeavyDeals">
             </div>
-            <span class="logo-text">Heavy<span>Deals</span></span>
+            <span class="logo-text d-none d-md-inline">Heavy<span>Deals</span></span>
         </div>
         <div class="dropdown">
             <a class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" href="#"
@@ -544,33 +552,23 @@
                 <div class="avatar-modern">{{ seller_name[0] if seller_name else 'S' }}</div>
             </a>
             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-4 mt-2">
-                <li><a class="dropdown-item py-2" href="/seller/dashboard"><i
-                            class="fas fa-chart-line me-2"></i>Dashboard</a></li>
-                <li><a class="dropdown-item py-2" href="/seller/orders"><i
-                            class="fas fa-shopping-bag me-2"></i>Orders</a></li>
-                <li><a class="dropdown-item py-2" href="/seller/products"><i class="fas fa-boxes me-2"></i>Products</a>
-                </li>
-                <li><a class="dropdown-item py-2" href="/seller/review-requests"><i
-                            class="fas fa-star me-2"></i>Reviews</a></li>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item text-danger py-2" href="/logout"><i
-                            class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/dashboard"><i class="fas fa-chart-line me-2"></i>Dashboard</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/orders"><i class="fas fa-shopping-bag me-2"></i>Orders</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/products"><i class="fas fa-boxes me-2"></i>Products</a></li>
+                <li><a class="dropdown-item py-2" href="/seller/review-requests"><i class="fas fa-star me-2"></i>Reviews</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item text-danger py-2" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
             </ul>
         </div>
     </div>
 
     <!-- Sidebar -->
     <div class="sidebar-modern">
-        <a href="/seller/dashboard" onclick="showLoader()"><i
-                class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+        <a href="/seller/dashboard" onclick="showLoader()"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
         <a href="/seller/review-requests" onclick="showLoader()"><i class="fas fa-star"></i><span>Review</span></a>
-        <a href="/seller/orders" onclick="showLoader()" class="active"><i
-                class="fas fa-shopping-bag"></i><span>Orders</span></a>
+        <a href="/seller/orders" onclick="showLoader()" class="active"><i class="fas fa-shopping-bag"></i><span>Orders</span></a>
         <a href="/seller/products" onclick="showLoader()"><i class="fas fa-boxes"></i><span>Products</span></a>
-        <a href="/seller/payment-history" onclick="showLoader()"><i
-                class="fas fa-rupee-sign"></i><span>Payments</span></a>
+        <a href="/seller/payment-history" onclick="showLoader()"><i class="fas fa-rupee-sign"></i><span>Payments</span></a>
     </div>
 
     <!-- Main Content -->
@@ -656,8 +654,7 @@
                     <div class="text-center py-4">Loading...</div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal"
-                        style="border-radius:20px;">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" style="border-radius:20px;">Close</button>
                 </div>
             </div>
         </div>
@@ -675,39 +672,28 @@
             if (loader) loader.style.display = "flex";
         }
 
-        // Format date properly for display
         function formatDateForNote(dateKey) {
             if (!dateKey || dateKey === 'Unknown Date') {
                 const today = new Date();
                 return `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
             }
-
-            // Remove time part if present
             let cleanDate = dateKey.split(' ')[0];
-
-            // Check if it's in YYYY-MM-DD format
             if (cleanDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 const parts = cleanDate.split('-');
                 return `${parts[2]}-${parts[1]}-${parts[0]}`;
             }
-
-            // Check if it's in DD-MM-YYYY format
             if (cleanDate.match(/^\d{2}-\d{2}-\d{4}$/)) {
                 return cleanDate;
             }
-
-            // Default fallback
             const today = new Date();
             return `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
         }
 
-        // Generate UPI Payment Link
         function generateUPILink(amount, dateKey, orderCount) {
             const formattedDate = formatDateForNote(dateKey);
             const orderText = orderCount === 1 ? 'order' : 'orders';
             const note = `Payment for ${orderCount} ${orderText} on ${formattedDate}`;
             const encodedNote = encodeURIComponent(note);
-
             return `upi://pay?pa=${UPI_ID}&pn=${UPI_NAME}&am=${amount}&cu=INR&tn=${encodedNote}`;
         }
 
@@ -716,7 +702,6 @@
             window.location.href = upiLink;
         }
 
-        // Group orders by date
         function groupOrdersByDate(orders) {
             const grouped = {};
             orders.forEach(order => {
@@ -746,8 +731,6 @@
             const sortedDates = Object.keys(grouped).sort((a, b) => {
                 if (a === 'Unknown Date') return 1;
                 if (b === 'Unknown Date') return -1;
-
-                // Try to parse dates for sorting
                 function getDateObj(dateStr) {
                     if (dateStr.includes('-')) {
                         const parts = dateStr.split('-');
@@ -759,7 +742,6 @@
                     }
                     return new Date(dateStr);
                 }
-
                 const dateA = getDateObj(a);
                 const dateB = getDateObj(b);
                 return dateB - dateA;
@@ -772,7 +754,6 @@
                 const safeId = dateKey.replace(/[^a-zA-Z0-9]/g, '_');
                 const displayDate = formatDateForNote(dateKey);
 
-                // Date group header row with Pay button
                 html += `<tr class="day-group-header" onclick="toggleDayGroup('${safeId}')">
                             <td><i class="fas fa-chevron-right toggle-icon" id="icon_${safeId}"></i></td>
                             <td colspan="7">
@@ -788,7 +769,6 @@
                             </td>
                           </tr>`;
 
-                // Individual order rows
                 group.orders.forEach(order => {
                     let statusHtml = '';
                     if (order.status === 'pending') statusHtml = '<span class="status-badge status-pending">Pending</span>';
@@ -816,7 +796,7 @@
             updateStats();
         }
 
-        window.toggleDayGroup = function (safeId) {
+        window.toggleDayGroup = function(safeId) {
             const rows = document.querySelectorAll(`.day-group-${safeId}`);
             const icon = document.getElementById(`icon_${safeId}`);
             if (rows.length === 0) return;
@@ -841,8 +821,6 @@
 
             let orderDate = order.order_placed_at || 'Unknown';
             if (orderDate && orderDate.includes(' ')) orderDate = orderDate.split(' ')[0];
-
-            // Format date for display
             const displayDate = formatDateForNote(orderDate);
 
             let linksHtml = '';
@@ -882,7 +860,6 @@
 
         function updateStats() {
             let totalOrders = 0, reviewSubmitted = 0, pendingApproval = 0, approvedOrders = 0;
-
             ordersData.forEach(order => {
                 totalOrders++;
                 if (order.status === 'review_submitted') {
@@ -892,19 +869,18 @@
                     approvedOrders++;
                 }
             });
-
             document.getElementById('totalOrdersCount').innerText = totalOrders;
             document.getElementById('reviewSubmittedCount').innerText = reviewSubmitted;
             document.getElementById('pendingApprovalCount').innerText = pendingApproval;
             document.getElementById('approvedOrdersCount').innerText = approvedOrders;
         }
 
-        window.addEventListener("load", function () {
+        window.addEventListener("load", function() {
             document.getElementById("loader").style.display = "none";
             if (ordersData && ordersData.length > 0) renderOrdersTable();
         });
 
-        window.addEventListener("pageshow", function (event) {
+        window.addEventListener("pageshow", function(event) {
             let loader = document.getElementById("loader");
             if (loader) loader.style.display = "none";
             if (event.persisted) loader.style.display = "none";
