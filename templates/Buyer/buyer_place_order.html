@@ -25,6 +25,24 @@
         .btn-submit:hover { background: var(--orange-dark); transform: translateY(-2px); }
         .alert-modern { background: var(--orange-light); border-radius: 12px; padding: 12px; color: var(--orange-dark); text-align: center; margin-bottom: 1.5rem; }
         .preview-img { max-width: 100px; margin-top: 10px; border-radius: 8px; display: none; }
+        .btn-view {
+            display: inline-block;
+            background: transparent;
+            border: 1px solid var(--orange);
+            padding: 8px 16px;
+            border-radius: 40px;
+            color: var(--orange);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+        .btn-view:hover {
+            background: var(--orange);
+            color: white;
+            transform: translateY(-2px);
+        }
         @media (max-width: 480px) {
             .order-card { padding: 1.5rem; }
             .logo-icon { width: 50px; height: 50px; }
@@ -40,15 +58,41 @@
     <div class="alert-modern {% if error %}alert-error{% endif %}"><i class="fas fa-info-circle me-2"></i>{{ msg }}</div>
     {% endif %}
     <div class="product-info">
-        <div class="d-flex justify-content-between align-items-center">
-            <div><span class="badge bg-secondary mb-1">{{ product.name }}</span><h5 class="fw-bold mb-1">{{ product.name }}</h5><p class="mb-0"><i class="fas fa-gift me-1" style="color: var(--orange);"></i>Reward: ₹{{ (product.refund/2)|int }}</p></div>
-            <div><span class="badge" style="background: #dcfce7; color: #16a34a;"><i class="fas fa-tag me-1"></i>Limited Slots</span></div>
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <span class="badge bg-secondary mb-1">{{ product.brand }}</span>
+                <h5 class="fw-bold mb-1">{{ product.name }}</h5>
+                <p class="mb-0"><i class="fas fa-gift me-1" style="color: var(--orange);"></i>Reward: ₹{{ (product.refund/2)|int }}</p>
+            </div>
+            <div>
+                <span class="badge" style="background: #dcfce7; color: #16a34a;">
+                    <i class="fas fa-tag me-1"></i>Limited Slots
+                </span>
+            </div>
+        </div>
+        <!-- View Product Link - Moved from Dashboard to Here -->
+        <div class="mt-3 pt-2 border-top">
+            <a href="{{ product.link }}" target="_blank" class="btn-view">
+                <i class="fas fa-external-link-alt me-2"></i>View Product on Amazon
+            </a>
+            <small class="text-muted d-block mt-2">⚠️ Click above to open product page. Complete your purchase on Amazon first.</small>
         </div>
     </div>
     <form method="POST" enctype="multipart/form-data">
-        <div class="mb-3"><label class="form-label fw-semibold">Order ID</label><input type="text" name="amazon_order_id" class="input-modern" placeholder="e.g., 405-1234567-8901234" required></div>
-        <div class="mb-3"><label class="form-label fw-semibold">Order Amount (₹)</label><input type="number" name="order_amount" class="input-modern" placeholder="Enter order value" step="0.01" required></div>
-        <div class="mb-3"><label class="form-label fw-semibold">Order Screenshot</label><input type="file" name="order_screenshot" class="form-control file-input" accept="image/*" required onchange="previewImage(this)"><img id="preview" class="preview-img" alt="Preview"><small class="text-muted">Upload screenshot of your Amazon order (JPG, PNG)</small></div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Order ID</label>
+            <input type="text" name="amazon_order_id" class="input-modern" placeholder="e.g., 405-1234567-8901234" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Order Amount (₹)</label>
+            <input type="number" name="order_amount" class="input-modern" placeholder="Enter order value" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Order Screenshot</label>
+            <input type="file" name="order_screenshot" class="form-control file-input" accept="image/*" required onchange="previewImage(this)">
+            <img id="preview" class="preview-img" alt="Preview">
+            <small class="text-muted">Upload screenshot of your Amazon order (JPG, PNG)</small>
+        </div>
         <button type="submit" class="btn-submit mt-2"><i class="fas fa-check-circle me-2"></i>Submit Order</button>
     </form>
     <div class="text-center mt-4"><a href="/buyer/dashboard" class="text-muted small">← Back to Dashboard</a></div>
