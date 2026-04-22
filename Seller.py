@@ -596,3 +596,62 @@ def seller_payment_history():
         conn.close()
     
     return render_template("Seller/seller_payment_history.html", batches=batches, seller_name=seller_name)
+
+@seller_bp.route("/seller/product/ordered-count/<int:product_id>")
+def get_product_ordered_count(product_id):
+    if not session.get("seller_id"):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    seller_id = session.get("seller_id")
+    
+    conn = db()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT COUNT(*) FROM orders 
+            WHERE product_id = %s AND seller_id = %s
+        """, (product_id, seller_id))
+        ordered_count = cur.fetchone()[0] or 0
+        
+        return jsonify({"success": True, "ordered_count": ordered_count})
+    except Exception as e:
+        print(f"Error getting ordered count: {e}")
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
+
+
+@seller_bp.route("/seller/product/update-limit", methods=["POST"])
+def update_product_limit():
+    if not session.get("seller_id"):
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    product_id = data.get("product_id")
+    new_limit = data.get("new_limit")
+    seller_id = session.get("seller_id")
+    
+    if not product_id or not new_limit:
+        return jsonify({"success": False, "error": "Product ID and new limit required"})
+    
+    conn = db()
+    cur = conn.cursor()
+    try:
+        # Check if product belongs to this seller
+        cur.execute("SELECT id FROM products WHERE id=%s AND seller_id=%s", (product_id, seller_id))
+        if not cur.fetchone():
+            return jsonify({"success": False, "error": "Product not found"})
+        
+        # Update the limit
+        cur.execute("UPDATE products SET order_limit = %s WHERE id = %s", (new_limit, product_id))
+        conn.commit()
+        
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Error updating limit: {e}")
+        conn.rollback()
+        return jsonify({"success": False, "error": str(e)})
+    finally:
+        cur.close()
+        conn.close()
