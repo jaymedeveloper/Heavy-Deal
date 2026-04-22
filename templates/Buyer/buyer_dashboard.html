@@ -277,16 +277,22 @@
                         <span class="product-badge" style="background: #dcfce7; color: #16a34a;">
                             <i class="fas fa-gift me-1"></i>₹{{ (p.refund/2)|int }} reward</span>
                     </div>
-                    <h5 class="fw-bold mb-2" style="color: var(--navy);">{{ p.name[:35] }}{% if p.name|length > 35 %}...{% endif %}</h5>
-                    <p class="text-muted small mb-3"><i class="fas fa-users me-1"></i> Slots left: {{ p.slots_left }}/{{ p.order_limit }}</p>
-                    <div class="d-flex justify-content-end align-items-center">
-                        {% if p.already_ordered %}
-                        <span class="btn-order btn-disabled" style="background: #cbd5e1;"><i
-                                class="fas fa-check me-1"></i>Already Ordered</span>
-                        {% else %}
-                        <a href="/buyer/place-order/{{ p.id }}" class="btn-order">
-                        <i class="fas fa-gift me-1"></i>Earn {{ (p.refund/2)|int }}</a>
-                        {% endif %}
+                    <h5 class="fw-bold mb-2" style="color: var(--navy);">{{ p.name[:35] }}{% if p.name|length > 35
+                        %}...{% endif %}</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <p class="text-muted small mb-0"><i class="fas fa-users me-1"></i> Slots left: {{ p.slots_left
+                            }}/{{ p.order_limit }}</p>
+                        <div>
+                            {% if p.already_ordered %}
+                            <span class="btn-order btn-disabled"
+                                style="background: #cbd5e1; padding: 6px 16px; font-size: 0.8rem;"><i
+                                    class="fas fa-check me-1"></i>Already Ordered</span>
+                            {% else %}
+                            <a href="/buyer/place-order/{{ p.id }}" class="btn-order"
+                                style="padding: 6px 16px; font-size: 0.8rem;">
+                                <i class="fas fa-gift me-1"></i>Earn {{ (p.refund/2)|int }}</a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
