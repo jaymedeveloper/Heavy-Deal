@@ -174,6 +174,24 @@
             box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
         }
 
+        .btn-edit-limit {
+            background: transparent;
+            border: 1px solid var(--orange);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--orange);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+
+        .btn-edit-limit:hover {
+            background: var(--orange);
+            color: white;
+        }
+
         .table-modern {
             border-radius: 20px;
             overflow: hidden;
@@ -283,9 +301,47 @@
             border-radius: 10px;
         }
 
+        .limit-cell {
+            min-width: 100px;
+        }
+
         @keyframes spin {
             100% {
                 transform: rotate(360deg);
+            }
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #16a34a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 1100;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast-notification.error {
+            background: #dc2626;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
             }
         }
 
@@ -366,6 +422,18 @@
                 font-size: 0.7rem;
                 padding: 3px 8px;
             }
+
+            .btn-edit-limit {
+                padding: 2px 8px;
+                font-size: 0.6rem;
+            }
+
+            .toast-notification {
+                bottom: 80px;
+                right: 15px;
+                left: 15px;
+                text-align: center;
+            }
         }
     </style>
 </head>
@@ -373,6 +441,12 @@
 <body>
     <div id="loader">
         <div class="spinner-modern"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastMsg" class="toast-notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastText">Success!</span>
     </div>
     
     <!-- Navbar - Fixed -->
@@ -439,7 +513,12 @@
                             </td>
                             <td><span class="badge bg-light text-dark px-3 py-1 rounded-pill">{{ p.brand }}</span></td>
                             <td><span class="badge-refund">₹{{ p.refund }}</span></td>
-                            <td>{{ p.order_limit }}</td>
+                            <td class="limit-cell">
+                                <span id="limit-display-{{ p.id }}">{{ p.order_limit }}</span>
+                                <button class="btn-edit-limit" onclick="openEditLimitModal({{ p.id }}, {{ p.order_limit }}, '{{ p.name|replace("'", "\\'") }}')">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                            </td>
                             <td>
                                 {% set ordered_count = p.ordered_count|int %}
                                 {% set limit = p.order_limit|int %}
@@ -466,6 +545,42 @@
                 <p class="text-muted small">Click the "Add Product" button to start listing</p>
             </div>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- Edit Limit Modal -->
+    <div class="modal fade modal-modern" id="editLimitModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" style="color: var(--navy);"><i class="fas fa-pen me-2"
+                            style="color: var(--orange);"></i>Edit Order Limit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editLimitForm">
+                    <div class="modal-body px-4">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Product</label>
+                            <p id="editProductName" class="text-muted mb-2" style="font-size: 0.9rem;"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Current Limit</label>
+                            <p id="currentLimit" class="mb-2" style="color: var(--orange); font-weight: 600;"></p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">New Order Limit</label>
+                            <input type="number" name="new_limit" id="newLimit" class="form-control input-rounded" 
+                                placeholder="Enter new limit" min="1" required>
+                            <input type="hidden" name="product_id" id="editProductId">
+                        </div>
+                        <small class="text-muted"><i class="fas fa-info-circle me-1"></i>Note: New limit must be greater than or equal to current ordered count ({{ ordered_count }})</small>
+                    </div>
+                    <div class="modal-footer border-0 pb-4 px-4">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 40px;">Cancel</button>
+                        <button type="submit" class="btn-add-modern"><i class="fas fa-save me-2"></i>Update Limit</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -501,9 +616,110 @@
     <div style="height: 100px;"></div>
 
     <script>
-        function showLoader() { let loader = document.getElementById("loader"); if (loader) loader.style.display = "flex"; }
-        window.addEventListener("load", function () { let loader = document.getElementById("loader"); if (loader) loader.style.display = "none"; });
-        window.addEventListener("pageshow", function (event) { let loader = document.getElementById("loader"); if (loader) loader.style.display = "none"; if (event.persisted) loader.style.display = "none"; });
+        let currentOrderedCount = 0;
+
+        function showLoader() { 
+            let loader = document.getElementById("loader"); 
+            if (loader) loader.style.display = "flex"; 
+        }
+
+        function hideLoader() {
+            let loader = document.getElementById("loader");
+            if (loader) loader.style.display = "none";
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toastMsg');
+            const toastText = document.getElementById('toastText');
+            toastText.innerHTML = message;
+            if (isError) {
+                toast.classList.add('error');
+            } else {
+                toast.classList.remove('error');
+            }
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function openEditLimitModal(productId, currentLimit, productName) {
+            document.getElementById('editProductId').value = productId;
+            document.getElementById('editProductName').innerText = productName;
+            document.getElementById('currentLimit').innerText = currentLimit;
+            document.getElementById('newLimit').value = currentLimit;
+            
+            // Get current ordered count for this product
+            fetch(`/seller/product/ordered-count/${productId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentOrderedCount = data.ordered_count;
+                        const note = document.querySelector('#editLimitForm small');
+                        note.innerHTML = `<i class="fas fa-info-circle me-1"></i>Note: New limit must be greater than or equal to current ordered count (${currentOrderedCount})`;
+                    }
+                })
+                .catch(err => console.log(err));
+            
+            new bootstrap.Modal(document.getElementById('editLimitModal')).show();
+        }
+
+        document.getElementById('editLimitForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const productId = document.getElementById('editProductId').value;
+            const newLimit = document.getElementById('newLimit').value;
+            
+            if (parseInt(newLimit) < currentOrderedCount) {
+                showToast(`Limit cannot be less than current ordered count (${currentOrderedCount})`, true);
+                return;
+            }
+            
+            showLoader();
+            
+            try {
+                const response = await fetch('/seller/product/update-limit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        product_id: productId,
+                        new_limit: newLimit
+                    })
+                });
+                
+                const data = await response.json();
+                hideLoader();
+                
+                if (data.success) {
+                    showToast('Order limit updated successfully!');
+                    // Update the display on the page
+                    document.getElementById(`limit-display-${productId}`).innerText = newLimit;
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('editLimitModal')).hide();
+                    // Reload the page to update progress bar
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.error || 'Failed to update limit', true);
+                }
+            } catch (error) {
+                hideLoader();
+                showToast('Something went wrong', true);
+            }
+        });
+
+        window.addEventListener("load", function () { 
+            let loader = document.getElementById("loader"); 
+            if (loader) loader.style.display = "none"; 
+        });
+        
+        window.addEventListener("pageshow", function (event) { 
+            let loader = document.getElementById("loader"); 
+            if (loader) loader.style.display = "none"; 
+            if (event.persisted) loader.style.display = "none"; 
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
