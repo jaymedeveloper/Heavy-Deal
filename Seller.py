@@ -156,8 +156,28 @@ def seller_products():
     products = []
     
     try:
-        cur.execute("SELECT name, brand, refund, order_limit, link FROM products WHERE seller_id=%s", (seller_id,))
-        products = cur.fetchall()
+        # Get products with order count
+        cur.execute("""
+            SELECT p.id, p.name, p.brand, p.refund, p.order_limit, p.link,
+                   COALESCE(COUNT(o.id), 0) as ordered_count
+            FROM products p
+            LEFT JOIN orders o ON p.id = o.product_id AND o.seller_id = p.seller_id
+            WHERE p.seller_id = %s
+            GROUP BY p.id, p.name, p.brand, p.refund, p.order_limit, p.link
+            ORDER BY p.id DESC
+        """, (seller_id,))
+        
+        rows = cur.fetchall()
+        for r in rows:
+            products.append({
+                "id": r[0],
+                "name": r[1],
+                "brand": r[2],
+                "refund": r[3],
+                "order_limit": r[4],
+                "link": r[5],
+                "ordered_count": r[6] or 0
+            })
     except Exception as e:
         print(f"Products fetch error: {e}")
     finally:
@@ -165,7 +185,6 @@ def seller_products():
         conn.close()
     
     return render_template("Seller/seller_products.html", seller_name=seller_name, products=products)
-
 
 @seller_bp.route("/seller/products/add", methods=["POST"])
 def add_product():
@@ -493,12 +512,7 @@ def reject_review(order_id):
     return redirect("/seller/review-requests")
 
 
-@seller_bp.route("/seller/refunds")
-def seller_refunds():
-    if not session.get("seller_id"):
-        return redirect("/seller/login")
-    
-    return render_template("Seller/seller_refunds.html", seller_name=session.get("seller_name"), refunds=[])
+
 
 
 @seller_bp.route("/seller/payment-history")
