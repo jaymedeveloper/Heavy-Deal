@@ -94,6 +94,12 @@ def buyer_auth():
     return render_template('Buyer/buyer_auth.html', msg=msg)
 
 
+@buyer_bp.route('/buyer/google/login')
+def google_login():
+    redirect_uri = request.url_root.rstrip('/') + '/buyer/google/callback'
+    return google.authorize_redirect(redirect_uri)
+
+
 @buyer_bp.route('/buyer/google/callback')
 def google_callback():
     try:
@@ -101,6 +107,7 @@ def google_callback():
     except Exception as e:
         print(f"OAuth error: {e}")
         return redirect('/buyer/auth?msg=Google+login+failed+please+try+again')
+    
     user_info = token['userinfo']
     email = user_info['email']
     name = user_info['name']
@@ -122,11 +129,9 @@ def google_callback():
             
             session.permanent = True
             
-            # ✅ Check if mobile is missing
             if not mobile_exists or not upi_exists or not password_exists:
                 return redirect('/buyer/complete-profile')
         else:
-            # New Google user - insert with empty fields
             cur.execute("""
                 INSERT INTO buyers (name, email, upi_id, password, mobile) 
                 VALUES (%s, %s, %s, %s, %s)
@@ -137,7 +142,6 @@ def google_callback():
             session['buyer_id'] = cur.fetchone()[0]
             session['buyer_name'] = name
             session.permanent = True
-            # ✅ Redirect to complete-profile for mobile, UPI, password
             return redirect('/buyer/complete-profile')
         
     except Exception as e:
@@ -147,6 +151,7 @@ def google_callback():
         conn.close()
     
     return redirect('/buyer/dashboard')
+
 
 @buyer_bp.route('/buyer/complete-profile', methods=['GET', 'POST'])
 def complete_profile():
