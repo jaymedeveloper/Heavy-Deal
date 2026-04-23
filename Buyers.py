@@ -267,7 +267,7 @@ def place_order(product_id):
     try:
         cur.execute("""
             SELECT p.id, p.name, p.refund, p.order_limit, p.seller_id,
-                   COALESCE((SELECT COUNT(*) FROM orders WHERE product_id = p.id), 0) as total_ordered
+                   COALESCE((SELECT COUNT(*) FROM orders WHERE product_id = p.id), 0) as total_ordered, p.link
             FROM products p WHERE p.id = %s
         """, (product_id,))
         product = cur.fetchone()
@@ -321,7 +321,7 @@ def place_order(product_id):
         cur.close()
         conn.close()
     
-    product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3]}
+    product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link':product[6]}
     return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg)
 
 
