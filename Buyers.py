@@ -40,12 +40,17 @@ def buyer_auth():
             conn = db()
             cur = conn.cursor()
             try:
-                cur.execute("SELECT id,name FROM buyers WHERE email=%s AND password=%s", (email, password))
+                cur.execute("SELECT id, name, mobile FROM buyers WHERE email=%s AND password=%s", (email, password))
                 user = cur.fetchone()
                 if user:
                     session['buyer_id'] = user[0]
                     session['buyer_name'] = user[1]
                     session.permanent = True
+                    
+                    # ✅ Check if mobile is missing
+                    if not user[2] or user[2] == '':
+                        return redirect('/buyer/complete-profile')
+                    
                     return redirect('/buyer/dashboard')
                 else:
                     msg = "Invalid credentials"
@@ -67,11 +72,16 @@ def buyer_auth():
             try:
                 cur.execute("INSERT INTO buyers (name, email, password, upi_id) VALUES (%s, %s, %s, %s)", (name, email, password, upi))
                 conn.commit()
-                cur.execute("SELECT id,name FROM buyers WHERE email=%s", (email,))
+                cur.execute("SELECT id, name, mobile FROM buyers WHERE email=%s", (email,))
                 user = cur.fetchone()
                 session['buyer_id'] = user[0]
                 session['buyer_name'] = user[1]
                 session.permanent = True
+                
+                # ✅ New user - mobile missing, send to complete-profile
+                if not user[2] or user[2] == '':
+                    return redirect('/buyer/complete-profile')
+                
                 return redirect('/buyer/dashboard')
             except Exception as e:
                 print(f"Register error: {e}")
@@ -82,13 +92,6 @@ def buyer_auth():
                 conn.close()
     
     return render_template('Buyer/buyer_auth.html', msg=msg)
-
-
-@buyer_bp.route('/buyer/google/login')
-def google_login():
-    # Dynamically generate redirect URI based on request
-    redirect_uri = request.url_root.rstrip('/') + '/buyer/google/callback'
-    return google.authorize_redirect(redirect_uri)
 
 
 @buyer_bp.route('/buyer/google/callback')
@@ -106,35 +109,36 @@ def google_callback():
     cur = conn.cursor()
     
     try:
-        cur.execute("SELECT id, upi_id, password, name FROM buyers WHERE email=%s", (email,))
+        cur.execute("SELECT id, mobile, upi_id, password, name FROM buyers WHERE email=%s", (email,))
         user = cur.fetchone()
         
         if user:
             session['buyer_id'] = user[0]
-            session['buyer_name'] = user[3]
-            # Check if profile needs completion
-            upi_exists = user[1] and user[1] != ''
-            password_exists = user[2] and user[2] != ''
+            session['buyer_name'] = user[4]
+            
+            mobile_exists = user[1] and user[1] != ''
+            upi_exists = user[2] and user[2] != ''
+            password_exists = user[3] and user[3] != ''
+            
             session.permanent = True
-            if not upi_exists or not password_exists:
-                # Redirect to profile completion page
+            
+            # ✅ Check if mobile is missing
+            if not mobile_exists or not upi_exists or not password_exists:
                 return redirect('/buyer/complete-profile')
         else:
-            # New user - insert with Google name, empty UPI and password
+            # New Google user - insert with empty fields
             cur.execute("""
-                INSERT INTO buyers (name, email, upi_id, password) 
-                VALUES (%s, %s, %s, %s)
-            """, (name, email, "", ""))
+                INSERT INTO buyers (name, email, upi_id, password, mobile) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (name, email, "", "", ""))
             conn.commit()
             
             cur.execute("SELECT id FROM buyers WHERE email=%s", (email,))
             session['buyer_id'] = cur.fetchone()[0]
+            session['buyer_name'] = name
             session.permanent = True
-            # Redirect to profile completion
+            # ✅ Redirect to complete-profile for mobile, UPI, password
             return redirect('/buyer/complete-profile')
-        
-        session.permanent = True
-        session['buyer_name'] = name
         
     except Exception as e:
         print(f"Google callback error: {e}")
