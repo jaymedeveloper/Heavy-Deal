@@ -121,7 +121,7 @@
     
     <div class="info-box">
         <i class="fas fa-info-circle me-2" style="color: var(--orange);"></i>
-        <small>Please set your name, UPI ID (to receive refunds), and password.</small>
+        <small>Please set your name, mobile number, UPI ID (to receive refunds), and password.</small>
     </div>
     
     {% if msg %}
@@ -131,7 +131,12 @@
     <form method="POST">
         <div class="input-group-modern">
             <i class="fas fa-user"></i>
-            <input type="text" name="name" class="input-modern" placeholder="Amazon Profile Name" required>
+            <input type="text" name="name" class="input-modern" placeholder="Amazon Profile Name" value="{{ current_name }}" required>
+        </div>
+        
+        <div class="input-group-modern">
+            <i class="fas fa-phone-alt"></i>
+            <input type="tel" name="mobile" class="input-modern" placeholder="Mobile Number (10 digits)" value="{{ current_mobile }}" required>
         </div>
         
         <div class="input-group-modern">
