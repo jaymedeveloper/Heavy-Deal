@@ -152,6 +152,7 @@ def complete_profile():
     buyer_id = session.get('buyer_id')
     msg = ""
     current_name = ""
+    current_mobile = ""
     current_upi = ""
     
     conn = db()
@@ -159,28 +160,33 @@ def complete_profile():
     
     try:
         # Get current user details
-        cur.execute("SELECT name, upi_id, password FROM buyers WHERE id = %s", (buyer_id,))
+        cur.execute("SELECT name, mobile, upi_id, password FROM buyers WHERE id = %s", (buyer_id,))
         buyer = cur.fetchone()
         
         if buyer:
             current_name = buyer[0] or ''
-            current_upi = buyer[1] or ''
-            upi_exists = buyer[1] and buyer[1] != ''
-            password_exists = buyer[2] and buyer[2] != ''
+            current_mobile = buyer[1] or ''
+            current_upi = buyer[2] or ''
+            mobile_exists = buyer[1] and buyer[1] != ''
+            upi_exists = buyer[2] and buyer[2] != ''
+            password_exists = buyer[3] and buyer[3] != ''
             
-            # If both UPI and password are already set, redirect to dashboard
-            if upi_exists and password_exists:
+            # If all fields are already set, redirect to dashboard
+            if mobile_exists and upi_exists and password_exists:
                 return redirect('/buyer/dashboard')
         
         if request.method == 'POST':
             name = request.form.get('name')
+            mobile = request.form.get('mobile')
             upi_id = request.form.get('upi_id')
             password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
             
             # Validation
-            if not name or not upi_id or not password:
+            if not name or not mobile or not upi_id or not password:
                 msg = "Please fill all fields"
+            elif not mobile.isdigit() or len(mobile) != 10:
+                msg = "Please enter a valid 10-digit mobile number"
             elif '@' not in upi_id:
                 msg = "Please enter a valid UPI ID (e.g., name@okhdfcbank)"
             elif len(password) < 6:
@@ -188,12 +194,12 @@ def complete_profile():
             elif password != confirm_password:
                 msg = "Passwords do not match"
             else:
-                # Update Name, UPI ID and Password
+                # Update Name, Mobile, UPI ID and Password
                 cur.execute("""
                     UPDATE buyers 
-                    SET name = %s, upi_id = %s, password = %s 
+                    SET name = %s, mobile = %s, upi_id = %s, password = %s 
                     WHERE id = %s
-                """, (name, upi_id, password, buyer_id))
+                """, (name, mobile, upi_id, password, buyer_id))
                 conn.commit()
                 # Update session name
                 session['buyer_name'] = name
@@ -210,6 +216,7 @@ def complete_profile():
     return render_template('Buyer/buyer_complete_profile.html', 
                           msg=msg, 
                           current_name=current_name,
+                          current_mobile=current_mobile,
                           current_upi=current_upi)
 
 
@@ -322,7 +329,7 @@ def place_order(product_id):
         conn.close()
     
     product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link':product[6]}
-    return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, buyer_name= session.get('buyer_name'))
+    return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, buyer_name=session.get('buyer_name'))
 
 
 @buyer_bp.route('/buyer/my-orders')
