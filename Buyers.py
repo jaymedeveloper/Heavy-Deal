@@ -322,7 +322,7 @@ def place_order(product_id):
         conn.close()
     
     product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link':product[6]}
-    return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg)
+    return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, buyer_name=buyer_id = session.get('buyer_name'))
 
 
 @buyer_bp.route('/buyer/my-orders')
