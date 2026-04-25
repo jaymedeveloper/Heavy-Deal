@@ -3,9 +3,10 @@ from Seller import seller_bp
 from Buyers import buyer_bp, oauth
 from Admin import admin_bp
 from datetime import timedelta
+import secrets
 
 app = Flask(__name__)
-app.secret_key = "heavy-deals-secret-key-change-in-production"
+app.secret_key = secrets.token_hex(32)
 app.permanent_session_lifetime = timedelta(days=3650)
 
 # ✅ Force HTTPS Redirect for all HTTP requests
