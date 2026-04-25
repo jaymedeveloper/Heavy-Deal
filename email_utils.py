@@ -27,7 +27,7 @@ def send_email(to_email, subject, message, is_html=False):
 
 def send_welcome_email(to_email, buyer_name):
     """
-    Welcome email - Zero margins in all email clients
+    Welcome email for new user - Zero margin, top aligned
     """
     html_content = f"""
     <!DOCTYPE html>
@@ -36,89 +36,116 @@ def send_welcome_email(to_email, buyer_name):
         <meta charset="UTF-8">
         <title>Welcome to HeavyDeals</title>
     </head>
-    <body style="margin:0; padding:0; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%; height:100%; background-color:#f0f2f5;">
+    <body style="margin:0; padding:0; font-family: Arial, Helvetica, sans-serif;">
         
-        <!-- Outlook fix for body margins -->
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0; padding:0; border-collapse:collapse;">
             <tr>
                 <td align="center" style="margin:0; padding:0;">
-                    
-                    <!-- Main container - Gmail fix -->
-                    <div style="max-width:500px; width:100%; margin:0 auto; background-color:#ffffff;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:500px; width:100%; margin:0; padding:0; background:#ffffff;">
                         
                         <!-- Header -->
-                        <div style="background:#0a192f; padding:12px 10px; text-align:center;">
-                            <div style="font-size:24px;">🛍️</div>
-                            <div style="color:#f97316; font-size:18px; font-weight:bold; margin:2px 0 0;">HeavyDeals</div>
-                            <div style="color:#94a3b8; font-size:10px; margin:2px 0 0;">Earn Rewards for Reviews</div>
-                        </div>
+                        <tr>
+                            <td bgcolor="#0a192f" style="background:#0a192f; padding:12px 10px; text-align:center; margin:0;">
+                                <span style="font-size:24px;">🛍️</span>
+                                <h1 style="color:#f97316; margin:2px 0 0; font-size:18px;">HeavyDeals</h1>
+                                <p style="color:#94a3b8; margin:2px 0 0; font-size:10px;">Earn Rewards for Reviews</p>
+                            </td>
+                        </tr>
                         
                         <!-- Welcome -->
-                        <div style="padding:8px 10px 4px;">
-                            <div style="color:#0a192f; font-size:17px; font-weight:bold;">Welcome, {buyer_name}! 🎉</div>
-                            <div style="color:#64748b; font-size:12px; margin:4px 0 0;">Get ready to earn rewards!</div>
-                        </div>
+                        <tr>
+                            <td style="padding:10px 10px 5px;">
+                                <h2 style="color:#0a192f; margin:0; font-size:17px;">Welcome, {buyer_name}! 🎉</h2>
+                                <p style="color:#64748b; margin:4px 0 0; font-size:12px;">Get ready to earn rewards!</p>
+                            </td>
+                        </tr>
                         
                         <!-- Bonus -->
-                        <div style="padding:0 10px;">
-                            <div style="background:#ffedd5; border-radius:8px; padding:6px; text-align:center;">
-                                <div style="color:#0a192f; font-size:11px; font-weight:bold;">✨ First Order Bonus</div>
-                                <div style="color:#f97316; font-size:16px; font-weight:bold; margin:2px 0 0;">UP TO ₹500 EXTRA</div>
-                            </div>
-                        </div>
+                        <tr>
+                            <td style="padding:0 10px;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffedd5" style="background:#ffedd5; border-radius:8px;">
+                                    <tr><td style="padding:6px; text-align:center;">
+                                        <p style="color:#0a192f; margin:0; font-size:11px; font-weight:bold;">✨ First Order Bonus</p>
+                                        <p style="color:#f97316; margin:2px 0 0; font-size:16px; font-weight:bold;">UP TO ₹500 EXTRA</p>
+                                    </td></tr>
+                                </table>
+                            </td>
+                        </tr>
                         
                         <!-- Steps Title -->
-                        <div style="padding:6px 10px 0;">
-                            <div style="color:#0a192f; text-align:center; font-weight:bold; font-size:12px;">⚡ How It Works</div>
-                        </div>
+                        <tr>
+                            <td style="padding:8px 10px 0;">
+                                <p style="color:#0a192f; text-align:center; margin:0; font-weight:bold; font-size:12px;">⚡ How It Works</p>
+                            </td>
+                        </tr>
                         
-                        <!-- Steps Row -->
-                        <div style="padding:5px 10px; display:flex; justify-content:space-between; gap:5px;">
-                            <div style="flex:1; background:#f8fafc; border-radius:6px; padding:4px; text-align:center;">
-                                <div style="font-size:18px;">📦</div>
-                                <div style="font-size:10px;">Order</div>
-                            </div>
-                            <div style="flex:1; background:#f8fafc; border-radius:6px; padding:4px; text-align:center;">
-                                <div style="font-size:18px;">⭐</div>
-                                <div style="font-size:10px;">Review</div>
-                            </div>
-                            <div style="flex:1; background:#f8fafc; border-radius:6px; padding:4px; text-align:center;">
-                                <div style="font-size:18px;">💰</div>
-                                <div style="font-size:10px;">Get Paid</div>
-                            </div>
-                        </div>
+                        <!-- Steps -->
+                        <tr>
+                            <td style="padding:5px 10px;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                    <tr>
+                                        <td width="33%" align="center" style="padding:2px;">
+                                            <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
+                                                <tr><td align="center"><span style="font-size:18px;">📦</span><br><span style="font-size:10px;">Order</span></td></tr>
+                                            </table>
+                                        </td>
+                                        <td width="33%" align="center" style="padding:2px;">
+                                            <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
+                                                <tr><td align="center"><span style="font-size:18px;">⭐</span><br><span style="font-size:10px;">Review</span></td></tr>
+                                            </table>
+                                        </td>
+                                        <td width="33%" align="center" style="padding:2px;">
+                                            <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
+                                                <tr><td align="center"><span style="font-size:18px;">💰</span><br><span style="font-size:10px;">Get Paid</span></td></tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
                         
                         <!-- Benefits -->
-                        <div style="padding:0 10px;">
-                            <div style="background:#f0fdf4; border-radius:6px; padding:6px;">
-                                <div style="color:#16a34a; font-weight:bold; font-size:11px; margin:0 0 4px;">🎁 What You Get</div>
-                                <div style="color:#334155; font-size:10px; margin:2px 0;">✅ 50% refund on every review</div>
-                                <div style="color:#334155; font-size:10px; margin:2px 0;">✅ Bonus for first 5 orders</div>
-                                <div style="color:#334155; font-size:10px; margin:2px 0;">✅ Priority support</div>
-                            </div>
-                        </div>
+                        <tr>
+                            <td style="padding:0 10px;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f0fdf4" style="background:#f0fdf4; border-radius:6px;">
+                                    <tr><td style="padding:6px;">
+                                        <p style="color:#16a34a; margin:0 0 4px; font-weight:bold; font-size:11px;">🎁 What You Get</p>
+                                        <p style="color:#334155; margin:2px 0; font-size:10px;">✅ 50% refund on every review</p>
+                                        <p style="color:#334155; margin:2px 0; font-size:10px;">✅ Bonus for first 5 orders</p>
+                                        <p style="color:#334155; margin:2px 0; font-size:10px;">✅ Priority support</p>
+                                    </td></tr>
+                                </table>
+                            </td>
+                        </tr>
                         
                         <!-- Pro Tip -->
-                        <div style="padding:5px 10px;">
-                            <div style="background:#fef3c7; border-radius:6px; padding:4px;">
-                                <div style="color:#d97706; font-size:9px;"><b>💡 Tip:</b> Quality screenshots = faster approval!</div>
-                            </div>
-                        </div>
+                        <tr>
+                            <td style="padding:5px 10px;">
+                                <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fef3c7" style="background:#fef3c7; border-radius:6px;">
+                                    <tr><td style="padding:4px;">
+                                        <p style="color:#d97706; margin:0; font-size:9px;"><b>💡 Tip:</b> Quality screenshots = faster approval!</p>
+                                    </td></tr>
+                                </table>
+                            </td>
+                        </tr>
                         
                         <!-- Button -->
-                        <div style="padding:8px 10px 5px; text-align:center;">
-                            <a href="https://heavy-deal-a5in.onrender.com/buyer/dashboard" style="display:inline-block; background:#f97316; color:#ffffff; text-decoration:none; padding:6px 18px; border-radius:30px; font-weight:bold; font-size:12px;">🚀 Start Earning</a>
-                        </div>
+                        <tr>
+                            <td align="center" style="padding:8px 10px 5px;">
+                                <a href="https://heavy-deal-a5in.onrender.com/buyer/dashboard" style="display:inline-block; background:#f97316; color:white; text-decoration:none; padding:6px 18px; border-radius:30px; font-weight:bold; font-size:12px;">🚀 Start Earning</a>
+                            </td>
+                        </tr>
                         
                         <!-- Footer -->
-                        <div style="padding:5px 10px 8px;">
-                            <hr style="margin:5px 0; border:0; border-top:1px solid #e2e8f0;">
-                            <div style="color:#64748b; text-align:center; font-size:9px; margin:5px 0 0;">Need help? <a href="mailto:heavydeals567@gmail.com" style="color:#f97316;">heavydeals567@gmail.com</a></div>
-                            <div style="color:#64748b; text-align:center; font-size:9px; margin:3px 0 0;">© HeavyDeals • Earn Rewards</div>
-                        </div>
+                        <tr>
+                            <td style="padding:0 10px 8px;">
+                                <hr style="margin:5px 0; border:none; border-top:1px solid #e2e8f0;">
+                                <p style="color:#64748b; margin:5px 0 0; text-align:center; font-size:9px;">Need help? <a href="mailto:heavydeals567@gmail.com" style="color:#f97316;">heavydeals567@gmail.com</a></p>
+                                <p style="color:#64748b; margin:3px 0 0; text-align:center; font-size:9px;">© HeavyDeals • Earn Rewards</p>
+                            </td>
+                        </tr>
                         
-                    </div>
-                    
+                    </table>
                 </td>
             </tr>
         </table>
