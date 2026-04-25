@@ -3,6 +3,7 @@ from db import db
 from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
+from email_utils import send_email
 
 buyer_bp = Blueprint('buyer', __name__)
 oauth = OAuth()
@@ -45,6 +46,7 @@ def buyer_auth():
                 if user:
                     session['buyer_id'] = user[0]
                     session['buyer_name'] = user[1]
+                    session['buyer_email'] = email
                     session.permanent = True
                     
                     # ✅ Check if mobile is missing
@@ -77,6 +79,7 @@ def buyer_auth():
                 user = cur.fetchone()
                 session['buyer_id'] = user[0]
                 session['buyer_name'] = user[1]
+
                 session.permanent = True
                 
                 # ✅ New user - mobile missing, send to complete-profile
@@ -129,6 +132,7 @@ def google_callback():
         if user:
             session['buyer_id'] = user[0]
             session['buyer_name'] = user[4]
+            session['buyer_email'] = email
             
             mobile_exists = user[1] and user[1] != ''
             upi_exists = user[2] and user[2] != ''
@@ -148,6 +152,7 @@ def google_callback():
             cur.execute("SELECT id FROM buyers WHERE email=%s", (email,))
             session['buyer_id'] = cur.fetchone()[0]
             session['buyer_name'] = name
+            session['buyer_email'] = email
             session.permanent = True
             return redirect('/buyer/complete-profile')
         
@@ -219,6 +224,7 @@ def complete_profile():
                 conn.commit()
                 # Update session name
                 session['buyer_name'] = name
+                
                 session.permanent = True
                 return redirect('/buyer/dashboard')
         
@@ -335,6 +341,19 @@ def place_order(product_id):
                 """, (amazon_order_id, buyer_id, seller_id, product_id_db, product_name, 
                       order_amount, refund_amount, order_screenshot_url))
                 conn.commit()
+
+                # ✅ Send email to buyer
+                send_email(
+                    to_email=session.get('buyer_email'),
+                    subject=f"Order Confirmation - {amazon_order_id}",
+                    message=f"Your order has been placed successfully!\n\nOrder ID: {amazon_order_id}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder ScreenShot: {order_screenshot_url}"
+                )
+
+                send_email(
+                    to_email="bhalanijaynil@gmail.com",
+                    subject=f"New Order Received - {amazon_order_id}",
+                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder ScreenShot: {order_screenshot_url}"
+                )
                 return redirect('/buyer/dashboard')
         
     except Exception as e:
@@ -363,11 +382,13 @@ def buyer_my_orders():
     try:
         # Get buyer name from database if not in session
         if buyer_name == 'Customer':
-            cur.execute("SELECT name FROM buyers WHERE id = %s", (buyer_id,))
+            cur.execute("SELECT name, email FROM buyers WHERE id = %s", (buyer_id,))
             result = cur.fetchone()
             if result:
                 buyer_name = result[0]
+                buyer_email = result[1]
                 session['buyer_name'] = buyer_name
+                session['buyer_email'] = buyer_email
         
         cur.execute("""
             SELECT id, order_id, product_name, order_amount, refund_amount, 
@@ -489,6 +510,7 @@ def buyer_profile():
         
         # Update session name
         session['buyer_name'] = buyer_name
+        session['buyer_email'] = buyer_email
         
     except Exception as e:
         print(f"Profile error: {e}")
@@ -649,6 +671,7 @@ def buyer_profile_update():
         
         # Update session
         session['buyer_name'] = name
+        session['buyer_email'] = email
         
         msg = "Profile updated successfully!"
         
