@@ -6,15 +6,6 @@ admin_bp = Blueprint('admin', __name__)
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
-
-@admin_bp.route('/admin/send')
-def send():
-    send_email(
-            to_email='jaybhalani298@gmail.com',
-            subject="Seller Account Rejected - HeavyDeals",
-            message=f"Dear {'Jay'},\n\nYour seller account has been Rejected. You can not use seller penal. \n\nSite: https://heavy-deal-a5in.onrender.com"
-        )
-    return "ok"
     
 @admin_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
