@@ -3,7 +3,7 @@ from db import db
 from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
-from email_utils import send_email
+from email_utils import send_email, send_welcome_email
 
 buyer_bp = Blueprint('buyer', __name__)
 oauth = OAuth()
@@ -79,8 +79,10 @@ def buyer_auth():
                 user = cur.fetchone()
                 session['buyer_id'] = user[0]
                 session['buyer_name'] = user[1]
-
+                session['buyer_email'] = email
                 session.permanent = True
+
+                send_welcome_email(email, user[1])
                 
                 # ✅ New user - mobile missing, send to complete-profile
                 if not user[2] or user[2] == '':
