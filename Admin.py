@@ -112,6 +112,15 @@ def reject_seller(seller_id):
     try:
         cur.execute("UPDATE sellers SET status = 'rejected' WHERE id = %s", (seller_id,))
         conn.commit()
+        cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
+        seller=cur.fetchone()
+
+        # ✅ Send approval email to seller
+        send_email(
+            to_email=seller[0],
+            subject="Seller Account Rejected - HeavyDeals",
+            message=f"Dear {seller[1]},\n\nYour seller account has been Rejected. You can not use seller penal. \n\nSite: https://heavy-deal-a5in.onrender.com"
+        )
     except Exception as e:
         print(f"Reject seller error: {e}")
         conn.rollback()
