@@ -96,9 +96,15 @@ def buyer_auth():
 
 @buyer_bp.route('/buyer/google/login')
 def google_login():
-    redirect_uri = request.url_root.rstrip('/') + '/buyer/google/callback'
+    # ✅ Get the base URL with HTTPS
+    base_url = request.url_root.rstrip('/')
+    if base_url.startswith('http://'):
+        base_url = base_url.replace('http://', 'https://', 1)
+    
+    redirect_uri = base_url + '/buyer/google/callback'
+    print(f"🔐 Redirect URI: {redirect_uri}")
+    
     return google.authorize_redirect(redirect_uri)
-
 
 @buyer_bp.route('/buyer/google/callback')
 def google_callback():
