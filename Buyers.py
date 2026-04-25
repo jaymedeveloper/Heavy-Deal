@@ -155,6 +155,8 @@ def google_callback():
             session['buyer_id'] = cur.fetchone()[0]
             session['buyer_name'] = name
             session['buyer_email'] = email
+
+            send_welcome_email(email, name)
             session.permanent = True
             return redirect('/buyer/complete-profile')
         
