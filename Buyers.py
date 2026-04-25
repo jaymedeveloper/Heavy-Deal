@@ -156,7 +156,7 @@ def google_callback():
             session['buyer_name'] = name
             session['buyer_email'] = email
 
-            send_welcome_email(email, name)
+            
             session.permanent = True
             return redirect('/buyer/complete-profile')
         
@@ -228,7 +228,7 @@ def complete_profile():
                 conn.commit()
                 # Update session name
                 session['buyer_name'] = name
-                
+                send_welcome_email(session.get('buyer_email'), name)
                 session.permanent = True
                 return redirect('/buyer/dashboard')
         
