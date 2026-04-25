@@ -1,30 +1,13 @@
-from flask import Flask, render_template, session, redirect, request
+from flask import Flask, render_template, session, redirect
 from Seller import seller_bp
 from Buyers import buyer_bp, oauth
 from Admin import admin_bp
 from datetime import timedelta
-import secrets
+import yagmail
 
 app = Flask(__name__)
-app.secret_key = "jhdgfkldhsjjiuxwhjhmwdjkfgdggfty"
+app.secret_key = "heavy-deals-secret-key-change-in-production"
 app.permanent_session_lifetime = timedelta(days=3650)
-
-# ✅ Force HTTPS Redirect for all HTTP requests
-@app.before_request
-def force_https():
-    if request.headers.get('X-Forwarded-Proto') == 'http':
-        url = request.url.replace('http://', 'https://', 1)
-        return redirect(url, code=301)
-
-# ✅ Add Security Headers
-@app.after_request
-def add_security_headers(response):
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    return response
 
 # Initialize OAuth with Flask app
 oauth.init_app(app)
@@ -42,6 +25,27 @@ def first():
 def logout():
     session.clear()
     return redirect("/")
+
+# ✅ Simple Email Test Route
+@app.route("/send-test-email")
+def send_test_email():
+    try:
+        # Gmail credentials (replace with your app password)
+        sender_email = "heavydeals567@gmail.com"
+        sender_password = "xqsj qywl oaqh xajc"  # 🔴 Put your 16-char app password here
+        
+        receiver_email = "bhalanijaynil@gmail.com"
+        subject = "Test Email from HeavyDeals"
+        content = "Hii test pass"
+        
+        # Send email
+        yag = yagmail.SMTP(sender_email, sender_password)
+        yag.send(to=receiver_email, subject=subject, contents=content)
+        
+        return "✅ Email sent successfully to bhalanijaynil@gmail.com!"
+        
+    except Exception as e:
+        return f"❌ Error sending email: {str(e)}"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
