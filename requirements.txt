@@ -5,3 +5,4 @@ authlib
 cloudinary
 python-dotenv
 requests
+yagmail
