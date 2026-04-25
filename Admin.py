@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, session, jsonify
+from email_utils import send_email
 from db import db
 
 admin_bp = Blueprint('admin', __name__)
@@ -81,6 +82,15 @@ def approve_seller(seller_id):
     try:
         cur.execute("UPDATE sellers SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (seller_id,))
         conn.commit()
+        cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
+        seller=cur.fetchone()
+
+        # ✅ Send approval email to seller
+        send_email(
+            to_email=seller[0],
+            subject="Seller Account Approved - HeavyDeals",
+            message=f"Dear {seller[1]},\n\nYour seller account has been approved. You can now login and start listing products.\n\nLogin here: https://heavy-deal-a5in.onrender.com/seller/login"
+        )
     except Exception as e:
         print(f"Approve seller error: {e}")
         conn.rollback()
