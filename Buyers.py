@@ -66,11 +66,12 @@ def buyer_auth():
             email = request.form.get('email')
             password = request.form.get('password')
             upi = request.form.get('upi_id')
+            number = request.form.get('number')
             
             conn = db()
             cur = conn.cursor()
             try:
-                cur.execute("INSERT INTO buyers (name, email, password, upi_id) VALUES (%s, %s, %s, %s)", (name, email, password, upi))
+                cur.execute("INSERT INTO buyers (name, email, password, upi_id, mobile) VALUES (%s, %s, %s, %s, %s)", (name, email, password, upi, number))
                 conn.commit()
                 cur.execute("SELECT id, name, mobile FROM buyers WHERE email=%s", (email,))
                 user = cur.fetchone()
