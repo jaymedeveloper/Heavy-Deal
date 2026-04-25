@@ -2,7 +2,7 @@ import yagmail
 
 # Gmail Configuration
 SENDER_EMAIL = "heavydeals567@gmail.com"
-SENDER_PASSWORD = "xxxx xxxx xxxx xxxx"  # ✅ Apna app password yahan daalo
+SENDER_PASSWORD = "xqsj qywl oaqh xajc"  # ✅ Apna app password yahan daalo
 
 def send_email(to_email, subject, message):
     """
