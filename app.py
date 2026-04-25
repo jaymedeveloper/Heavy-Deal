@@ -6,7 +6,7 @@ from datetime import timedelta
 import secrets
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
+app.secret_key = "jhdgfkldhsjjiuxwhjhmwdjkfgdggfty"
 app.permanent_session_lifetime = timedelta(days=3650)
 
 # ✅ Force HTTPS Redirect for all HTTP requests
