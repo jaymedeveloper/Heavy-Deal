@@ -63,7 +63,7 @@ def buyer_auth():
         if action == "login":
             email = request.form.get('email')
             password = request.form.get('password')
-            
+             
             conn = db()
             cur = conn.cursor()
             try:
@@ -634,7 +634,7 @@ def buyer_profile():
     
     try:
         cur.execute("""
-            SELECT name, email, upi_id
+            SELECT name, email, upi_id, mobile
             FROM buyers 
             WHERE id = %s
         """, (buyer_id,))
@@ -647,6 +647,7 @@ def buyer_profile():
         buyer_name = buyer[0]
         buyer_email = buyer[1]
         buyer_upi = buyer[2]
+        buyer_mobile = buyer[3] or ''
         
         session['buyer_name'] = buyer_name
         session['buyer_email'] = buyer_email
@@ -656,6 +657,7 @@ def buyer_profile():
         buyer_name = session.get('buyer_name', 'Customer')
         buyer_email = ''
         buyer_upi = ''
+        buyer_mobile = ''
     finally:
         cur.close()
         conn.close()
@@ -664,6 +666,7 @@ def buyer_profile():
                           buyer_name=buyer_name,
                           buyer_email=buyer_email,
                           buyer_upi=buyer_upi,
+                          buyer_mobile=buyer_mobile,
                           is_editing=False)
 
 
@@ -679,7 +682,7 @@ def buyer_profile_edit():
     
     try:
         cur.execute("""
-            SELECT name, email, upi_id
+            SELECT name, email, upi_id, mobile
             FROM buyers 
             WHERE id = %s
         """, (buyer_id,))
@@ -692,12 +695,14 @@ def buyer_profile_edit():
         buyer_name = buyer[0]
         buyer_email = buyer[1]
         buyer_upi = buyer[2]
+        buyer_mobile = buyer[3] or ''
         
     except Exception as e:
         print(f"Profile edit error: {e}")
         buyer_name = session.get('buyer_name', 'Customer')
         buyer_email = ''
         buyer_upi = ''
+        buyer_mobile = ''
     finally:
         cur.close()
         conn.close()
@@ -706,6 +711,7 @@ def buyer_profile_edit():
                           buyer_name=buyer_name,
                           buyer_email=buyer_email,
                           buyer_upi=buyer_upi,
+                          buyer_mobile=buyer_mobile,
                           is_editing=True)
 
 
@@ -715,7 +721,7 @@ def render_edit_profile_with_error(buyer_id, msg, error):
     
     try:
         cur.execute("""
-            SELECT name, email, upi_id
+            SELECT name, email, upi_id, mobile
             FROM buyers 
             WHERE id = %s
         """, (buyer_id,))
@@ -724,11 +730,13 @@ def render_edit_profile_with_error(buyer_id, msg, error):
         buyer_name = buyer[0] if buyer else session.get('buyer_name', 'Customer')
         buyer_email = buyer[1] if buyer else ''
         buyer_upi = buyer[2] if buyer else ''
+        buyer_mobile = buyer[3] if buyer else ''
         
     except Exception as e:
         buyer_name = session.get('buyer_name', 'Customer')
         buyer_email = ''
         buyer_upi = ''
+        buyer_mobile = ''
     finally:
         cur.close()
         conn.close()
@@ -737,6 +745,7 @@ def render_edit_profile_with_error(buyer_id, msg, error):
                           buyer_name=buyer_name,
                           buyer_email=buyer_email,
                           buyer_upi=buyer_upi,
+                          buyer_mobile=buyer_mobile,
                           is_editing=True,
                           msg=msg,
                           error=error)
@@ -751,6 +760,7 @@ def buyer_profile_update():
     
     name = request.form.get('name')
     email = request.form.get('email')
+    mobile = request.form.get('mobile')
     upi_id = request.form.get('upi_id')
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
@@ -762,6 +772,12 @@ def buyer_profile_update():
         msg = "Name and email are required"
         error = True
         return render_edit_profile_with_error(buyer_id, msg, error)
+    
+    if mobile:
+        if not mobile.isdigit() or len(mobile) != 10:
+            msg = "Please enter a valid 10-digit mobile number"
+            error = True
+            return render_edit_profile_with_error(buyer_id, msg, error)
     
     if upi_id and '@' not in upi_id:
         msg = "Please enter a valid UPI ID (e.g., name@okhdfcbank)"
@@ -782,27 +798,30 @@ def buyer_profile_update():
     cur = conn.cursor()
     
     try:
+        # Check if email already exists for another user
         cur.execute("SELECT id FROM buyers WHERE email = %s AND id != %s", (email, buyer_id))
         if cur.fetchone():
             msg = "Email already exists for another account"
             error = True
             return render_edit_profile_with_error(buyer_id, msg, error)
         
+        # Update query
         if password:
             cur.execute("""
                 UPDATE buyers 
-                SET name = %s, email = %s, upi_id = %s, password = %s
+                SET name = %s, email = %s, mobile = %s, upi_id = %s, password = %s
                 WHERE id = %s
-            """, (name, email, upi_id, password, buyer_id))
+            """, (name, email, mobile, upi_id, password, buyer_id))
         else:
             cur.execute("""
                 UPDATE buyers 
-                SET name = %s, email = %s, upi_id = %s
+                SET name = %s, email = %s, mobile = %s, upi_id = %s
                 WHERE id = %s
-            """, (name, email, upi_id, buyer_id))
+            """, (name, email, mobile, upi_id, buyer_id))
         
         conn.commit()
         
+        # Update session
         session['buyer_name'] = name
         session['buyer_email'] = email
         
@@ -817,4 +836,5 @@ def buyer_profile_update():
         cur.close()
         conn.close()
     
+    # Redirect with message
     return redirect('/buyer/profile?msg=' + msg + ('&error=1' if error else ''))
