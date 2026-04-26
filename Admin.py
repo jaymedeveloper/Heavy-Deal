@@ -105,14 +105,12 @@ def approve_seller(seller_id):
     cur = conn.cursor()
     
     try:
-        # Use IST for approved_at
         ist_now = get_ist_now()
         cur.execute("UPDATE sellers SET status = 'approved', approved_at = %s WHERE id = %s", (ist_now, seller_id))
         conn.commit()
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
         seller = cur.fetchone()
 
-        # Send approval email to seller
         send_email(
             to_email=seller[0],
             subject="Seller Account Approved - HeavyDeals",
@@ -142,7 +140,6 @@ def reject_seller(seller_id):
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
         seller = cur.fetchone()
 
-        # Send rejection email to seller
         send_email(
             to_email=seller[0],
             subject="Seller Account Rejected - HeavyDeals",
@@ -169,7 +166,6 @@ def all_sellers():
     pending_sellers_list = []
     
     try:
-        # Get all sellers
         cur.execute("""
             SELECT id, username, name, email, phone, status, 
                    created_at,
@@ -216,7 +212,6 @@ def admin_daily_payments():
     sellers_data = []
     
     try:
-        # Get all approved sellers with phone number
         cur.execute("""
             SELECT id, name, username, email, phone 
             FROM sellers 
@@ -228,7 +223,6 @@ def admin_daily_payments():
         for seller in sellers:
             seller_id, seller_name, seller_username, seller_email, seller_phone = seller
             
-            # First, get all unique order dates for this seller
             cur.execute("""
                 SELECT DISTINCT 
                     DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') as order_date
@@ -244,7 +238,6 @@ def admin_daily_payments():
             for date_row in order_dates:
                 order_date = date_row[0]
                 
-                # Get order details for this date
                 cur.execute("""
                     SELECT 
                         COUNT(*) as order_count,
@@ -259,7 +252,6 @@ def admin_daily_payments():
                 order_count = order_stats[0]
                 total_amount = float(order_stats[1]) if order_stats[1] else 0
                 
-                # Get payment status from daily_payments table
                 cur.execute("""
                     SELECT id, status, paid_at
                     FROM daily_payments
@@ -286,7 +278,6 @@ def admin_daily_payments():
                     'paid_at': format_ist_datetime(paid_at) if paid_at else '-'
                 })
             
-            # Only add seller if they have orders
             if payment_list:
                 sellers_data.append({
                     'id': seller_id,
@@ -307,6 +298,7 @@ def admin_daily_payments():
     
     return render_template('Admin/daily_payments.html', sellers=sellers_data)
 
+
 @admin_bp.route('/admin/api/orders-by-date')
 def api_orders_by_date():
     """API to get orders for a specific seller and date"""
@@ -314,12 +306,11 @@ def api_orders_by_date():
         return jsonify({"error": "Unauthorized"}), 401
     
     seller_id = request.args.get('seller_id')
-    date = request.args.get('date')  # Format: DD-MM-YYYY
+    date = request.args.get('date')
     
     if not seller_id or not date:
         return jsonify({"error": "Missing parameters"}), 400
     
-    # Convert date from DD-MM-YYYY to YYYY-MM-DD
     from datetime import datetime
     date_obj = datetime.strptime(date, '%d-%m-%Y')
     date_db = date_obj.strftime('%Y-%m-%d')
@@ -389,7 +380,6 @@ def approve_payment(payment_id):
     try:
         notes = request.form.get('notes', '')
         
-        # Get payment details first
         cur.execute("SELECT seller_id, payment_date FROM daily_payments WHERE id = %s", (payment_id,))
         payment = cur.fetchone()
         
@@ -399,7 +389,6 @@ def approve_payment(payment_id):
         seller_id = payment[0]
         payment_date = payment[1]
         
-        # Update daily_payments table with IST
         ist_now = get_ist_now()
         cur.execute("""
             UPDATE daily_payments 
@@ -408,7 +397,6 @@ def approve_payment(payment_id):
         """, (ist_now, notes, payment_id))
         conn.commit()
         
-        # Update order status from 'approved' to 'paid'
         cur.execute("""
             UPDATE orders 
             SET status = 'paid', 
@@ -468,26 +456,22 @@ def create_payment():
         total_amount = request.form.get('total_amount')
         order_count = request.form.get('order_count')
         
-        # Convert date from DD-MM-YYYY to YYYY-MM-DD
         from datetime import datetime
         date_obj = datetime.strptime(payment_date, '%d-%m-%Y')
         payment_date_db = date_obj.strftime('%Y-%m-%d')
         
-        # Check if payment already exists
         cur.execute("SELECT id FROM daily_payments WHERE seller_id=%s AND payment_date=%s", (seller_id, payment_date_db))
         existing = cur.fetchone()
         
         ist_now = get_ist_now()
         
         if existing:
-            # Update existing to paid
             cur.execute("""
                 UPDATE daily_payments 
                 SET status = 'paid', paid_at = %s, notes = 'Marked as paid by admin'
                 WHERE id = %s
             """, (ist_now, existing[0]))
         else:
-            # Create new payment record
             cur.execute("""
                 INSERT INTO daily_payments (seller_id, payment_date, total_amount, order_count, status, paid_at, notes)
                 VALUES (%s, %s, %s, %s, 'paid', %s, 'Marked as paid by admin')
@@ -495,7 +479,6 @@ def create_payment():
         
         conn.commit()
         
-        # Update order status from 'approved' to 'paid'
         cur.execute("""
             UPDATE orders 
             SET status = 'paid', 
@@ -529,26 +512,12 @@ def admin_payment_history():
     sellers_data = []
     
     try:
-        # Check what columns exist in payment_batch_items table
+        # Get all sellers who have payment batches
         cur.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'payment_batch_items'
-        """)
-        columns = [col[0] for col in cur.fetchall()]
-        
-        # Determine which column name to use for batch reference
-        batch_ref_column = None
-        if 'batch_id' in columns:
-            batch_ref_column = 'batch_id'
-        else:
-            return render_template('Admin/payment_history.html', sellers=[])
-        
-        # Get all sellers who have payment batches with phone number
-        cur.execute("""
-            SELECT DISTINCT pb.seller_id, s.name, s.username, s.email, s.phone
-            FROM payment_batches pb
-            JOIN sellers s ON pb.seller_id = s.id
+            SELECT DISTINCT o.seller_id, s.name, s.username, s.email, s.phone
+            FROM orders o
+            JOIN sellers s ON o.seller_id = s.id
+            WHERE o.batch_id IS NOT NULL
             ORDER BY s.name
         """)
         sellers = cur.fetchall()
@@ -562,7 +531,7 @@ def admin_payment_history():
             
             # Get all batches for this seller
             cur.execute("""
-                SELECT pb.id, pb.batch_id, pb.total_orders, pb.total_refund_amount, 
+                SELECT DISTINCT pb.id, pb.batch_id, pb.total_orders, pb.total_refund_amount, 
                        pb.status, pb.created_at, pb.processed_at
                 FROM payment_batches pb
                 WHERE pb.seller_id = %s
@@ -574,40 +543,23 @@ def admin_payment_history():
             for b in batches:
                 batch_id_value = b[1]
                 
-                # Get items for this batch with buyer UPI info
-                query = f"""
-                    SELECT pbi.order_id, o.order_id as order_number, o.product_name, 
-                           pbi.order_refund_amount, pbi.status, 
-                           b.upi_id as buyer_upi, 
-                           o.status as order_status
-                    FROM payment_batch_items pbi
-                    JOIN orders o ON pbi.order_id = o.id
-                    JOIN buyers b ON o.buyer_id = b.id
-                    WHERE pbi.{batch_ref_column} = %s
-                """
-                
-                cur.execute(query, (batch_id_value,))
+                # Get items for this batch - directly from orders table
+                cur.execute("""
+                    SELECT o.id, o.order_id, o.product_name, 
+                           o.refund_amount, o.status
+                    FROM orders o
+                    WHERE o.batch_id = %s
+                """, (batch_id_value,))
                 items = cur.fetchall()
                 
                 item_list = []
                 for item in items:
-                    # Correct column mapping:
-                    # item[0] = order_id (from pbi)
-                    # item[1] = order_number (from o.order_id)
-                    # item[2] = product_name
-                    # item[3] = order_refund_amount
-                    # item[4] = status (from pbi)
-                    # item[5] = buyer_upi
-                    # item[6] = order_status (from o.status)
-                    
                     item_list.append({
                         "order_id": item[0],
                         "order_number": item[1],
                         "product_name": item[2],
                         "refund_amount": float(item[3]) if item[3] else 0,
-                        "batch_item_status": item[4] if item[4] else 'pending',  # pbi status
-                        "buyer_upi": item[5] if item[5] else '-',  # buyer UPI
-                        "order_status": item[6] if len(item) > 6 and item[6] else 'pending'  # order status
+                        "status": item[4] if item[4] else 'pending'
                     })
                 
                 batch_list.append({
@@ -658,7 +610,6 @@ def update_payment_batch_status(batch_id):
     cur = conn.cursor()
     
     try:
-        # Get the batch_id_value
         cur.execute("SELECT batch_id FROM payment_batches WHERE id = %s", (batch_id,))
         result = cur.fetchone()
         
@@ -667,7 +618,6 @@ def update_payment_batch_status(batch_id):
         
         batch_id_value = result[0]
         
-        # Update payment_batches table
         ist_now = get_ist_now()
         cur.execute("""
             UPDATE payment_batches 
@@ -678,15 +628,15 @@ def update_payment_batch_status(batch_id):
         """, (new_status, new_status, ist_now, notes, batch_id))
         conn.commit()
         
-        # If status is completed, also update payment_batch_items
+        # If status is completed, update orders status to 'paid'
         if new_status == 'completed':
             cur.execute("""
-                UPDATE payment_batch_items 
+                UPDATE orders 
                 SET status = 'paid'
-                WHERE batch_id = %s
+                WHERE batch_id = %s AND status = 'approved'
             """, (batch_id_value,))
             conn.commit()
-            print(f"✅ Updated payment_batch_items status to paid for batch: {batch_id_value}")
+            print(f"✅ Updated orders status to paid for batch: {batch_id_value}")
         
         print(f"✅ Batch {batch_id_value} status updated to {new_status}")
         
@@ -711,7 +661,6 @@ def admin_batch_refund():
     batches_data = []
     
     try:
-        # Get ALL payment batches (including completed)
         cur.execute("""
             SELECT DISTINCT pb.id, pb.batch_id, pb.seller_id, pb.total_orders, 
                    pb.total_refund_amount, pb.status, pb.created_at, pb.processed_at, s.name as seller_name
@@ -733,15 +682,14 @@ def admin_batch_refund():
             processed_at = batch[7]
             seller_name = batch[8]
             
-            # Get all orders in this batch
+            # Get all orders in this batch - directly from orders table
             cur.execute("""
-                SELECT pbi.order_id, o.order_id as order_number, o.product_name, 
+                SELECT o.id, o.order_id, o.product_name, 
                        o.refund_amount, o.status, b.name as buyer_name, b.email as buyer_email,
                        o.order_placed_at
-                FROM payment_batch_items pbi
-                JOIN orders o ON pbi.order_id = o.id
+                FROM orders o
                 JOIN buyers b ON o.buyer_id = b.id
-                WHERE pbi.batch_id = %s
+                WHERE o.batch_id = %s
             """, (batch_id_value,))
             
             items = cur.fetchall()
@@ -806,7 +754,6 @@ def mark_order_as_paid():
     cur = conn.cursor()
     
     try:
-        # Check for 'approved' status
         cur.execute("""
             SELECT id, refund_amount, buyer_id, order_id 
             FROM orders 
@@ -816,7 +763,6 @@ def mark_order_as_paid():
         order = cur.fetchone()
         
         if not order:
-            # Check if already paid
             cur.execute("SELECT status FROM orders WHERE id = %s", (order_id,))
             existing = cur.fetchone()
             if existing and existing[0] == 'paid':
@@ -824,9 +770,8 @@ def mark_order_as_paid():
             return jsonify({"error": "Order not found or not approved"}), 404
         
         refund_amount = float(order[1]) if order[1] else 0
-        buyer_amount = refund_amount / 2  # 50% to buyer
+        buyer_amount = refund_amount / 2
         
-        # Update order status to 'paid' with IST
         ist_now = get_ist_now()
         cur.execute("""
             UPDATE orders 
@@ -840,9 +785,8 @@ def mark_order_as_paid():
         
         # Check if all orders in this batch are now paid
         cur.execute("""
-            SELECT COUNT(*) FROM payment_batch_items pbi
-            JOIN orders o ON pbi.order_id = o.id
-            WHERE pbi.batch_id = %s AND o.status != 'paid'
+            SELECT COUNT(*) FROM orders 
+            WHERE batch_id = %s AND status != 'paid'
         """, (batch_id,))
         
         pending_count = cur.fetchone()[0]
