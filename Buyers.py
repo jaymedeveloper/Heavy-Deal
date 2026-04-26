@@ -1,11 +1,13 @@
-from flask import Blueprint, render_template, request, redirect, session
+from flask import Blueprint, render_template, request, redirect, session, jsonify
 from db import db
 from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
-from email_utils import send_email, send_welcome_email
+from email_utils import send_email, send_welcome_email, send_otp_email
 from datetime import datetime
 import pytz
+import random
+import string
 
 buyer_bp = Blueprint('buyer', __name__)
 oauth = OAuth()
@@ -13,17 +15,21 @@ oauth = OAuth()
 # IST Timezone
 IST = pytz.timezone('Asia/Kolkata')
 
+# Store OTP temporarily
+otp_storage = {}
+
 def get_ist_now():
-    """Return current datetime in IST"""
     return datetime.now(IST)
 
 def format_ist_datetime(dt):
-    """Format datetime to IST string"""
     if dt is None:
         return '-'
     if dt.tzinfo is None:
         dt = IST.localize(dt)
     return dt.astimezone(IST).strftime('%d-%m-%Y %H:%M:%S')
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=6))
 
 cloudinary.config(
     cloud_name="dt6rrmzxw",
@@ -47,6 +53,9 @@ def buyer_auth():
         return redirect('/buyer/dashboard')
     
     msg = ""
+    show_otp_field = False
+    temp_email = ""
+    error = False
     
     if request.method == 'POST':
         action = request.form.get('action')
@@ -66,19 +75,22 @@ def buyer_auth():
                     session['buyer_email'] = email
                     session.permanent = True
                     
-                    # Check if mobile is missing
                     if not user[2] or user[2] == '':
                         return redirect('/buyer/complete-profile')
                     
                     return redirect('/buyer/dashboard')
                 else:
                     msg = "Invalid credentials"
+                    error = True
             except Exception as e:
                 print(f"Login error: {e}")
                 msg = "Something went wrong"
+                error = True
             finally:
                 cur.close()
                 conn.close()
+            
+            return render_template('Buyer/buyer_auth.html', msg=msg, error=error, show_otp_field=False, temp_email="")
         
         elif action == "register":
             name = request.form.get('name')
@@ -90,36 +102,139 @@ def buyer_auth():
             conn = db()
             cur = conn.cursor()
             try:
-                cur.execute("INSERT INTO buyers (name, email, password, upi_id, mobile) VALUES (%s, %s, %s, %s, %s)", (name, email, password, upi, number))
-                conn.commit()
-                cur.execute("SELECT id, name, mobile FROM buyers WHERE email=%s", (email,))
-                user = cur.fetchone()
-                session['buyer_id'] = user[0]
-                session['buyer_name'] = user[1]
-                session['buyer_email'] = email
-                session.permanent = True
-
-                send_welcome_email(email, user[1])
+                # Check if email already exists and verified
+                cur.execute("SELECT id, is_email_verified FROM buyers WHERE email=%s", (email,))
+                existing = cur.fetchone()
                 
-                # New user - mobile missing, send to complete-profile
-                if not user[2] or user[2] == '':
-                    return redirect('/buyer/complete-profile')
+                if existing and existing[1]:
+                    # Email already verified - return error as JSON for AJAX
+                    return jsonify({
+                        "success": False, 
+                        "error": "email_exists",
+                        "message": "Email already registered. Please login."
+                    })
                 
-                return redirect('/buyer/dashboard')
+                # If email exists but not verified, delete it
+                if existing and not existing[1]:
+                    cur.execute("DELETE FROM buyers WHERE email=%s", (email,))
+                    conn.commit()
+                
+                # Store registration data temporarily
+                otp = generate_otp()
+                otp_storage[email] = {
+                    'otp': otp,
+                    'expires_at': datetime.now(IST).timestamp() + 300,
+                    'data': {
+                        'name': name,
+                        'email': email,
+                        'password': password,
+                        'upi': upi,
+                        'number': number
+                    }
+                }
+                
+                # Send OTP email
+                send_otp_email(email, name, otp)
+                
+                # Return success with OTP data
+                return jsonify({
+                    "success": True,
+                    "email": email,
+                    "message": "OTP sent successfully"
+                })
+                
             except Exception as e:
                 print(f"Register error: {e}")
                 conn.rollback()
-                msg = "Email already exists"
+                return jsonify({"success": False, "error": "server_error", "message": "Something went wrong"})
             finally:
                 cur.close()
                 conn.close()
+        
+        elif action == "verify_otp":
+            email = request.form.get('email')
+            entered_otp = request.form.get('otp')
+            
+            if not email or not entered_otp:
+                return jsonify({"success": False, "message": "Please enter OTP"})
+            
+            if email not in otp_storage:
+                return jsonify({"success": False, "message": "OTP expired or not found. Please register again."})
+            
+            stored_data = otp_storage[email]
+            current_time = datetime.now(IST).timestamp()
+            
+            if current_time > stored_data['expires_at']:
+                del otp_storage[email]
+                return jsonify({"success": False, "message": "OTP expired. Please register again."})
+            
+            if entered_otp == stored_data['otp']:
+                user_data = stored_data['data']
+                conn = db()
+                cur = conn.cursor()
+                try:
+                    cur.execute("""
+                        INSERT INTO buyers (name, email, password, upi_id, mobile, is_email_verified, verified_at) 
+                        VALUES (%s, %s, %s, %s, %s, true, %s)
+                    """, (user_data['name'], user_data['email'], user_data['password'], 
+                          user_data['upi'], user_data['number'], get_ist_now()))
+                    conn.commit()
+                    
+                    cur.execute("SELECT id, name, mobile FROM buyers WHERE email=%s", (user_data['email'],))
+                    user = cur.fetchone()
+                    
+                    session['buyer_id'] = user[0]
+                    session['buyer_name'] = user[1]
+                    session['buyer_email'] = user_data['email']
+                    session.permanent = True
+                    
+                    if email in otp_storage:
+                        del otp_storage[email]
+                    
+                    send_welcome_email(user_data['email'], user[1])
+                    
+                    return jsonify({"success": True, "redirect": "/buyer/dashboard"})
+                    
+                except Exception as e:
+                    print(f"OTP verification error: {e}")
+                    conn.rollback()
+                    return jsonify({"success": False, "message": "Something went wrong"})
+                finally:
+                    cur.close()
+                    conn.close()
+            else:
+                return jsonify({"success": False, "message": "Invalid OTP. Please try again."})
     
-    return render_template('Buyer/buyer_auth.html', msg=msg)
+    return render_template('Buyer/buyer_auth.html', msg=msg, error=error, show_otp_field=show_otp_field, temp_email=temp_email)
+
+
+@buyer_bp.route('/buyer/resend-otp', methods=['POST'])
+def resend_otp():
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({"success": False, "message": "Email required"}), 400
+    
+    if email not in otp_storage:
+        return jsonify({"success": False, "message": "Session expired. Please register again."}), 400
+    
+    new_otp = generate_otp()
+    user_data = otp_storage[email]['data']
+    
+    otp_storage[email] = {
+        'otp': new_otp,
+        'expires_at': datetime.now(IST).timestamp() + 300,
+        'data': user_data
+    }
+    
+    send_otp_email(email, user_data['name'], new_otp)
+    
+    return jsonify({"success": True, "message": "OTP resent successfully"})
 
 
 @buyer_bp.route('/buyer/google/login')
 def google_login():
-    # Get the base URL with HTTPS
     base_url = request.url_root.rstrip('/')
     if base_url.startswith('http://'):
         base_url = base_url.replace('http://', 'https://', 1)
@@ -146,7 +261,7 @@ def google_callback():
     cur = conn.cursor()
     
     try:
-        cur.execute("SELECT id, mobile, upi_id, password, name FROM buyers WHERE email=%s", (email,))
+        cur.execute("SELECT id, mobile, upi_id, password, name, is_email_verified FROM buyers WHERE email=%s", (email,))
         user = cur.fetchone()
         
         if user:
@@ -164,9 +279,9 @@ def google_callback():
                 return redirect('/buyer/complete-profile')
         else:
             cur.execute("""
-                INSERT INTO buyers (name, email, upi_id, password, mobile) 
-                VALUES (%s, %s, %s, %s, %s)
-            """, (name, email, "", "", ""))
+                INSERT INTO buyers (name, email, upi_id, password, mobile, is_email_verified, verified_at) 
+                VALUES (%s, %s, %s, %s, %s, true, %s)
+            """, (name, email, "", "", "", get_ist_now()))
             conn.commit()
             
             cur.execute("SELECT id FROM buyers WHERE email=%s", (email,))
@@ -186,6 +301,10 @@ def google_callback():
     return redirect('/buyer/dashboard')
 
 
+# ============ REST OF THE FUNCTIONS (complete-profile, dashboard, etc.) ============
+# [Keep all existing functions from your original Buyers.py here]
+
+# ============ REST OF THE FUNCTIONS ============
 @buyer_bp.route('/buyer/complete-profile', methods=['GET', 'POST'])
 def complete_profile():
     if not session.get('buyer_id'):
@@ -201,7 +320,6 @@ def complete_profile():
     cur = conn.cursor()
     
     try:
-        # Get current user details
         cur.execute("SELECT name, mobile, upi_id, password FROM buyers WHERE id = %s", (buyer_id,))
         buyer = cur.fetchone()
         
@@ -213,7 +331,6 @@ def complete_profile():
             upi_exists = buyer[2] and buyer[2] != ''
             password_exists = buyer[3] and buyer[3] != ''
             
-            # If all fields are already set, redirect to dashboard
             if mobile_exists and upi_exists and password_exists:
                 return redirect('/buyer/dashboard')
         
@@ -224,7 +341,6 @@ def complete_profile():
             password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
             
-            # Validation
             if not name or not mobile or not upi_id or not password:
                 msg = "Please fill all fields"
             elif not mobile.isdigit() or len(mobile) != 10:
@@ -236,14 +352,12 @@ def complete_profile():
             elif password != confirm_password:
                 msg = "Passwords do not match"
             else:
-                # Update Name, Mobile, UPI ID and Password
                 cur.execute("""
                     UPDATE buyers 
                     SET name = %s, mobile = %s, upi_id = %s, password = %s 
                     WHERE id = %s
                 """, (name, mobile, upi_id, password, buyer_id))
                 conn.commit()
-                # Update session name
                 session['buyer_name'] = name
                 send_welcome_email(session.get('buyer_email'), name)
                 session.permanent = True
@@ -356,7 +470,6 @@ def place_order(product_id):
             if not all([amazon_order_id, order_amount, order_screenshot_url]):
                 msg = "Please fill all fields and upload screenshot"
             else:
-                # Use IST for order_placed_at
                 ist_now = get_ist_now()
                 cur.execute("""
                     INSERT INTO orders (order_id, buyer_id, seller_id, product_id, product_name, 
@@ -366,7 +479,6 @@ def place_order(product_id):
                       order_amount, refund_amount, order_screenshot_url, ist_now))
                 conn.commit()
 
-                # Send email to buyer with IST timestamp
                 ist_time_str = format_ist_datetime(ist_now)
                 send_email(
                     to_email=session.get('buyer_email'),
@@ -405,7 +517,6 @@ def buyer_my_orders():
     orders = []
     
     try:
-        # Get buyer name from database if not in session
         if buyer_name == 'Customer':
             cur.execute("SELECT name, email FROM buyers WHERE id = %s", (buyer_id,))
             result = cur.fetchone()
@@ -492,7 +603,6 @@ def submit_review(order_id):
             if not all([review_link, delivered_screenshot_url, review_screenshot_url]):
                 msg = "Please fill all fields and upload both screenshots"
             else:
-                # Use IST for review_submitted_at
                 ist_now = get_ist_now()
                 cur.execute("""
                     UPDATE orders SET delivered_screenshot = %s, review_screenshot = %s, review_link = %s,
@@ -538,7 +648,6 @@ def buyer_profile():
         buyer_email = buyer[1]
         buyer_upi = buyer[2]
         
-        # Update session name
         session['buyer_name'] = buyer_name
         session['buyer_email'] = buyer_email
         
@@ -601,7 +710,6 @@ def buyer_profile_edit():
 
 
 def render_edit_profile_with_error(buyer_id, msg, error):
-    """Helper function to render edit profile with error message"""
     conn = db()
     cur = conn.cursor()
     
@@ -650,7 +758,6 @@ def buyer_profile_update():
     msg = ""
     error = False
     
-    # Validation
     if not name or not email:
         msg = "Name and email are required"
         error = True
@@ -675,14 +782,12 @@ def buyer_profile_update():
     cur = conn.cursor()
     
     try:
-        # Check if email already exists for another user
         cur.execute("SELECT id FROM buyers WHERE email = %s AND id != %s", (email, buyer_id))
         if cur.fetchone():
             msg = "Email already exists for another account"
             error = True
             return render_edit_profile_with_error(buyer_id, msg, error)
         
-        # Update query
         if password:
             cur.execute("""
                 UPDATE buyers 
@@ -698,7 +803,6 @@ def buyer_profile_update():
         
         conn.commit()
         
-        # Update session
         session['buyer_name'] = name
         session['buyer_email'] = email
         
@@ -713,5 +817,4 @@ def buyer_profile_update():
         cur.close()
         conn.close()
     
-    # Redirect with message
     return redirect('/buyer/profile?msg=' + msg + ('&error=1' if error else ''))
