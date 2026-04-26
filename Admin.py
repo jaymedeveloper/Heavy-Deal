@@ -541,7 +541,6 @@ def admin_payment_history():
         batch_ref_column = None
         if 'batch_id' in columns:
             batch_ref_column = 'batch_id'
-        
         else:
             return render_template('Admin/payment_history.html', sellers=[])
         
@@ -575,12 +574,15 @@ def admin_payment_history():
             for b in batches:
                 batch_id_value = b[1]
                 
-                # Get items for this batch
+                # Get items for this batch with buyer UPI info
                 query = f"""
                     SELECT pbi.order_id, o.order_id as order_number, o.product_name, 
-                           pbi.order_refund_amount, pbi.status
+                           pbi.order_refund_amount, pbi.status, 
+                           b.upi_id as buyer_upi, 
+                           o.status as order_status
                     FROM payment_batch_items pbi
                     JOIN orders o ON pbi.order_id = o.id
+                    JOIN buyers b ON o.buyer_id = b.id
                     WHERE pbi.{batch_ref_column} = %s
                 """
                 
@@ -589,12 +591,23 @@ def admin_payment_history():
                 
                 item_list = []
                 for item in items:
+                    # Correct column mapping:
+                    # item[0] = order_id (from pbi)
+                    # item[1] = order_number (from o.order_id)
+                    # item[2] = product_name
+                    # item[3] = order_refund_amount
+                    # item[4] = status (from pbi)
+                    # item[5] = buyer_upi
+                    # item[6] = order_status (from o.status)
+                    
                     item_list.append({
                         "order_id": item[0],
                         "order_number": item[1],
                         "product_name": item[2],
                         "refund_amount": float(item[3]) if item[3] else 0,
-                        "status": item[4] if item[4] else 'pending'
+                        "batch_item_status": item[4] if item[4] else 'pending',  # pbi status
+                        "buyer_upi": item[5] if item[5] else '-',  # buyer UPI
+                        "order_status": item[6] if len(item) > 6 and item[6] else 'pending'  # order status
                     })
                 
                 batch_list.append({
