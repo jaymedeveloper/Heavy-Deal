@@ -307,6 +307,76 @@ def admin_daily_payments():
     
     return render_template('Admin/daily_payments.html', sellers=sellers_data)
 
+@admin_bp.route('/admin/api/orders-by-date')
+def api_orders_by_date():
+    """API to get orders for a specific seller and date"""
+    if not session.get('admin_logged_in'):
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    seller_id = request.args.get('seller_id')
+    date = request.args.get('date')  # Format: DD-MM-YYYY
+    
+    if not seller_id or not date:
+        return jsonify({"error": "Missing parameters"}), 400
+    
+    # Convert date from DD-MM-YYYY to YYYY-MM-DD
+    from datetime import datetime
+    date_obj = datetime.strptime(date, '%d-%m-%Y')
+    date_db = date_obj.strftime('%Y-%m-%d')
+    
+    conn = db()
+    cur = conn.cursor()
+    
+    try:
+        cur.execute("""
+            SELECT 
+                o.id,
+                o.order_id,
+                o.product_name,
+                o.order_amount,
+                o.refund_amount,
+                o.status,
+                o.order_screenshot,
+                o.delivered_screenshot,
+                o.review_screenshot,
+                o.review_link,
+                b.name as buyer_name,
+                b.email as buyer_email
+            FROM orders o
+            JOIN buyers b ON o.buyer_id = b.id
+            WHERE o.seller_id = %s 
+                AND DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = %s
+            ORDER BY o.id DESC
+        """, (seller_id, date_db))
+        
+        orders = cur.fetchall()
+        
+        orders_list = []
+        for order in orders:
+            orders_list.append({
+                "id": order[0],
+                "order_id": order[1],
+                "product_name": order[2],
+                "order_amount": float(order[3]) if order[3] else 0,
+                "refund_amount": float(order[4]) if order[4] else 0,
+                "status": order[5],
+                "order_screenshot": order[6],
+                "delivered_screenshot": order[7],
+                "review_screenshot": order[8],
+                "review_link": order[9],
+                "buyer_name": order[10],
+                "buyer_email": order[11]
+            })
+        
+        return jsonify({"orders": orders_list})
+        
+    except Exception as e:
+        print(f"API orders by date error: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 
 @admin_bp.route('/admin/payment/<int:payment_id>/approve', methods=['POST'])
 def approve_payment(payment_id):
