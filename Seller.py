@@ -231,10 +231,8 @@ def seller_orders():
     orders = []
     
     try:
-        # Set timezone for this session
         cur.execute("SET timezone = 'Asia/Kolkata'")
         
-        # First, get daily payment status for each date
         cur.execute("""
             SELECT payment_date, status 
             FROM daily_payments 
@@ -247,12 +245,11 @@ def seller_orders():
                 payment_date = row[0].strftime('%d-%m-%Y')
                 daily_payment_status[payment_date] = row[1]
         
-        # Then get all orders with IST time
         cur.execute("""
             SELECT o.id, o.order_id, o.product_name, o.order_amount, o.status, 
                    o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' as order_placed_ist,
                    b.name, o.refund_amount, o.order_screenshot, o.delivered_screenshot, 
-                   o.review_screenshot, o.review_link
+                   o.review_screenshot, o.review_link, o.batch_id
             FROM orders o 
             JOIN buyers b ON o.buyer_id = b.id
             WHERE o.seller_id = %s 
@@ -277,6 +274,7 @@ def seller_orders():
                 "delivered_screenshot": r[9],
                 "review_screenshot": r[10],
                 "review_link": r[11],
+                "batch_id": r[12],
                 "daily_payment_status": daily_payment_status.get(order_date, 'pending')
             })
     except Exception as e:
@@ -287,8 +285,6 @@ def seller_orders():
     
     return render_template("Seller/seller_orders.html", orders=orders, seller_name=seller_name)
 
-
-# ==================== REVIEW REQUESTS (BULK APPROVE/REJECT) ====================
 
 @seller_bp.route("/seller/review-requests")
 def seller_review_requests():
@@ -373,7 +369,8 @@ def bulk_review_action():
             if action_type == 'approve':
                 refund_amount = float(order[1]) if order[1] else 0
                 
-                cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (order_id,))
+                # Update order status to approved and set batch_id
+                cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP, batch_id = %s WHERE id = %s", (batch_id, order_id))
                 
                 approved_orders.append({
                     "order_id": order_id,
@@ -405,13 +402,8 @@ def bulk_review_action():
                 VALUES (%s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
             """, (batch_id, seller_id, seller_name, total_orders_count, total_refund))
             
-            for order in approved_orders:
-                cur.execute("""
-                    INSERT INTO payment_batch_items (batch_id, order_id, order_refund_amount, status)
-                    VALUES (%s, %s, %s, 'pending')
-                """, (batch_id, order['order_id'], order['refund_amount']))
-        
-        conn.commit()
+            # No need to insert into payment_batch_items - batch_id already set in orders
+            conn.commit()
         
     except Exception as e:
         print(f"Bulk review action error: {e}")
@@ -448,22 +440,16 @@ def approve_review(order_id):
         if order:
             refund_amount = float(order[0]) if order[0] else 0
             
-            cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (order_id,))
-            conn.commit()
-            
             import uuid
             batch_id = str(uuid.uuid4())[:8].upper()
+            
+            cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP, batch_id = %s WHERE id = %s", (batch_id, order_id))
             
             cur.execute("""
                 INSERT INTO payment_batches (batch_id, seller_id, seller_name, total_orders, 
                     total_refund_amount, status, created_at)
                 VALUES (%s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
             """, (batch_id, seller_id, seller_name, 1, refund_amount))
-            
-            cur.execute("""
-                INSERT INTO payment_batch_items (batch_id, order_id, order_refund_amount, status)
-                VALUES (%s, %s, %s, 'pending')
-            """, (batch_id, order_id, refund_amount))
             
             conn.commit()
     except Exception as e:
@@ -522,19 +508,6 @@ def seller_payment_history():
     
     try:
         cur.execute("""
-            SELECT column_name 
-            FROM information_schema.columns 
-            WHERE table_name = 'payment_batch_items'
-        """)
-        columns = [col[0] for col in cur.fetchall()]
-        
-        batch_ref_column = None
-        if 'batch_id' in columns:
-            batch_ref_column = 'batch_id'
-        else:
-            return render_template("Seller/seller_payment_history.html", batches=batches, seller_name=seller_name)
-        
-        cur.execute("""
             SELECT pb.id, pb.batch_id, pb.total_orders, pb.total_refund_amount, 
                    pb.status, pb.created_at, pb.processed_at
             FROM payment_batches pb
@@ -544,15 +517,12 @@ def seller_payment_history():
         
         rows = cur.fetchall()
         for r in rows:
-            query = f"""
-                SELECT pbi.order_id, o.order_id as order_number, o.product_name, 
-                       pbi.order_refund_amount, pbi.status
-                FROM payment_batch_items pbi
-                JOIN orders o ON pbi.order_id = o.id
-                WHERE pbi.{batch_ref_column} = %s
-            """
-            
-            cur.execute(query, (r[1],))
+            # Get items for this batch - directly from orders table
+            cur.execute("""
+                SELECT o.id, o.order_id, o.product_name, o.refund_amount, o.status
+                FROM orders o
+                WHERE o.batch_id = %s
+            """, (r[1],))
             item_rows = cur.fetchall()
             
             batch_item_list = []
