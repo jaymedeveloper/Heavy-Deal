@@ -76,6 +76,110 @@
         .table-custom tbody td { padding: 0.9rem 1rem; vertical-align: middle; font-size: 0.85rem; border-bottom: 1px solid #f1f5f9; }
         .table-custom tbody tr:hover { background: #f8fafc; }
         
+        /* Nested order details styles */
+        .order-details-row {
+            background: #f8fafc;
+        }
+        .order-details-cell {
+            padding: 0 !important;
+        }
+        .order-details-content {
+            padding: 1rem 1rem 1rem 3rem;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .order-item {
+            background: white;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .order-item:hover {
+            border-color: var(--orange);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .order-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .order-id {
+            font-weight: 600;
+            color: var(--navy);
+            font-size: 0.85rem;
+        }
+        .order-status {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .order-status-pending { background: #fef3c7; color: #d97706; }
+        .order-status-approved { background: #dbeafe; color: #2563eb; }
+        .order-status-review { background: #fef3c7; color: #d97706; }
+        .order-status-paid { background: #dcfce7; color: #16a34a; }
+        .order-details {
+            display: flex;
+            gap: 20px;
+            font-size: 0.75rem;
+            color: #64748b;
+            flex-wrap: wrap;
+        }
+        .order-details span i {
+            width: 16px;
+            color: var(--orange);
+        }
+        .expand-order-icon {
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: var(--orange);
+        }
+        .expand-order-icon.rotated {
+            transform: rotate(90deg);
+        }
+        .order-screenshots {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px dashed #e2e8f0;
+            display: none;
+        }
+        .order-screenshots.show {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .screenshot-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            color: var(--orange);
+            text-decoration: none;
+        }
+        .screenshot-link:hover {
+            text-decoration: underline;
+        }
+        
+        .date-row-toggle {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .date-row-toggle:hover {
+            background: #f1f5f9;
+        }
+        .date-toggle-icon {
+            margin-right: 8px;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+        .date-toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+        
         .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 30px; font-size: 0.7rem; font-weight: 500; }
         .status-pending { background: #fef3c7; color: #d97706; }
         .status-paid { background: #dcfce7; color: #16a34a; }
@@ -85,6 +189,20 @@
         .btn-reject { background: #ef4444; border: none; padding: 4px 12px; border-radius: 30px; color: white; font-size: 0.7rem; cursor: pointer; transition: all 0.2s; }
         .btn-approve:hover { background: #16a34a; transform: scale(1.02); }
         .btn-reject:hover { background: #dc2626; transform: scale(1.02); }
+        .btn-view-orders {
+            background: transparent;
+            border: 1px solid var(--orange);
+            color: var(--orange);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-view-orders:hover {
+            background: var(--orange);
+            color: white;
+        }
         
         .stat-card { background: white; border-radius: 16px; padding: 0.9rem; border: 1px solid #e2e8f0; transition: all 0.2s; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
@@ -126,6 +244,7 @@
             }
             .seller-stats { gap: 8px; }
             .seller-stats span { font-size: 0.7rem; }
+            .order-details-content { padding: 0.75rem 0.75rem 0.75rem 1.5rem; }
         }
     </style>
 </head>
@@ -173,24 +292,62 @@
             <div class="payments-table-container" id="seller_{{ seller.id }}">
                 <div class="table-responsive">
                     <table class="table table-custom">
-                        <thead><tr><th>Date</th><th>Orders</th><th>Total Amount</th><th>Status</th><th>Paid On</th><th>Action</th></tr></thead>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"></th>
+                                <th>Date</th>
+                                <th>Orders</th>
+                                <th>Total Amount</th>
+                                <th>Status</th>
+                                <th>Paid On</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for p in seller.payments %}
-                            <tr>
+                            <tr class="date-row-toggle" data-date="{{ loop.index }}">
+                                <td class="text-center">
+                                    <i class="fas fa-chevron-right date-toggle-icon" id="date_icon_{{ seller.id }}_{{ loop.index }}"></i>
+                                </td>
                                 <td>{{ p.payment_date }}</td>
                                 <td>{{ p.order_count }}</td>
                                 <td style="color: var(--orange); font-weight: 600;">₹{{ p.total_amount }}</td>
-                                <td>{% if p.status == 'pending' %}<span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>{% elif p.status == 'paid' %}<span class="status-badge status-paid"><i class="fas fa-check-circle me-1"></i>Paid</span>{% elif p.status == 'rejected' %}<span class="status-badge status-rejected"><i class="fas fa-times-circle me-1"></i>Rejected</span>{% else %}<span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>{% endif %}</td>
+                                <td>
+                                    {% if p.status == 'pending' %}
+                                        <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
+                                    {% elif p.status == 'paid' %}
+                                        <span class="status-badge status-paid"><i class="fas fa-check-circle me-1"></i>Paid</span>
+                                    {% elif p.status == 'rejected' %}
+                                        <span class="status-badge status-rejected"><i class="fas fa-times-circle me-1"></i>Rejected</span>
+                                    {% else %}
+                                        <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ p.paid_at }}</td>
-                                <td>{% if p.status == 'pending' or p.status is none %}
-                                    <form method="POST" action="/admin/payment/create" style="display: inline-block;">
-                                        <input type="hidden" name="seller_id" value="{{ seller.id }}">
-                                        <input type="hidden" name="payment_date" value="{{ p.payment_date }}">
-                                        <input type="hidden" name="total_amount" value="{{ p.total_amount }}">
-                                        <input type="hidden" name="order_count" value="{{ p.order_count }}">
-                                        <button type="submit" class="btn-approve" onclick="return confirm('Mark payment of ₹{{ p.total_amount }} from {{ seller.name }} as PAID?')"><i class="fas fa-check"></i> Mark as Paid</button>
-                                    </form>
-                                    {% else %}<span class="text-muted small">-</span>{% endif %}
+                                <td>
+                                    {% if p.status == 'pending' or p.status is none %}
+                                        <form method="POST" action="/admin/payment/create" style="display: inline-block;">
+                                            <input type="hidden" name="seller_id" value="{{ seller.id }}">
+                                            <input type="hidden" name="payment_date" value="{{ p.payment_date }}">
+                                            <input type="hidden" name="total_amount" value="{{ p.total_amount }}">
+                                            <input type="hidden" name="order_count" value="{{ p.order_count }}">
+                                            <button type="submit" class="btn-approve" onclick="return confirm('Mark payment of ₹{{ p.total_amount }} from {{ seller.name }} as PAID?')"><i class="fas fa-check"></i> Mark as Paid</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr class="order-details-row" id="order_details_{{ seller.id }}_{{ loop.index }}" style="display: none;">
+                                <td colspan="7" class="order-details-cell">
+                                    <div class="order-details-content">
+                                        <div id="orders_list_{{ seller.id }}_{{ p.payment_date|replace('-', '_') }}">
+                                            <div class="text-center py-3">
+                                                <div class="spinner-border spinner-border-sm text-warning" role="status"></div>
+                                                <span class="ms-2 text-muted">Loading orders...</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -201,7 +358,7 @@
         </div>
         {% endfor %}
     {% else %}
-    <div class="empty-state"><i class="fas fa-users-slash"></i><h5 class="text-muted">No sellers found</h5><p class="text-muted small">Sellers will appear here once they register and have orders</p></div>
+        <div class="empty-state"><i class="fas fa-users-slash"></i><h5 class="text-muted">No sellers found</h5><p class="text-muted small">Sellers will appear here once they register and have orders</p></div>
     {% endif %}
 </div>
 
@@ -217,6 +374,126 @@
             icon.classList.add('rotated');
         }
     }
+
+    // Store loaded orders to avoid duplicate API calls
+    let loadedOrders = {};
+
+    function toggleOrderDetails(sellerId, index, date) {
+        const detailsRow = document.getElementById(`order_details_${sellerId}_${index}`);
+        const icon = document.getElementById(`date_icon_${sellerId}_${index}`);
+        
+        if (detailsRow.style.display === 'none' || detailsRow.style.display === '') {
+            detailsRow.style.display = 'table-row';
+            icon.classList.add('rotated');
+            
+            // Load orders if not already loaded
+            const key = `${sellerId}_${date}`;
+            if (!loadedOrders[key]) {
+                loadOrders(sellerId, date, index);
+            }
+        } else {
+            detailsRow.style.display = 'none';
+            icon.classList.remove('rotated');
+        }
+    }
+
+    function loadOrders(sellerId, date, index) {
+        const container = document.getElementById(`orders_list_${sellerId}_${date.replace(/-/g, '_')}`);
+        if (!container) return;
+        
+        fetch(`/admin/api/orders-by-date?seller_id=${sellerId}&date=${date}`)
+            .then(response => response.json())
+            .then(data => {
+                loadedOrders[`${sellerId}_${date}`] = true;
+                
+                if (data.orders && data.orders.length > 0) {
+                    let html = '<div><strong class="mb-2 d-block">📦 Orders for this day:</strong>';
+                    data.orders.forEach(order => {
+                        let statusClass = '';
+                        if (order.status === 'pending') statusClass = 'order-status-pending';
+                        else if (order.status === 'approved') statusClass = 'order-status-approved';
+                        else if (order.status === 'review_submitted') statusClass = 'order-status-review';
+                        else if (order.status === 'paid') statusClass = 'order-status-paid';
+                        
+                        html += `
+                            <div class="order-item">
+                                <div class="order-item-header">
+                                    <span class="order-id">🆔 Order #${order.order_id}</span>
+                                    <span class="order-status ${statusClass}">${order.status.replace('_', ' ')}</span>
+                                </div>
+                                <div class="order-details">
+                                    <span><i class="fas fa-tag"></i> ${order.product_name}</span>
+                                    <span><i class="fas fa-rupee-sign"></i> Amount: ₹${order.order_amount}</span>
+                                    <span><i class="fas fa-gift"></i> Refund: ₹${order.refund_amount}</span>
+                                    <span><i class="fas fa-user"></i> Buyer: ${order.buyer_name}</span>
+                                </div>
+                                <div class="mt-2">
+                                    <button class="btn-view-orders" onclick="toggleScreenshots('screenshots_${order.id}')">
+                                        <i class="fas fa-image"></i> View Screenshots
+                                    </button>
+                                    <div class="order-screenshots" id="screenshots_${order.id}">
+                        `;
+                        if (order.order_screenshot) {
+                            html += `<a href="${order.order_screenshot}" target="_blank" class="screenshot-link"><i class="fas fa-shopping-cart"></i> Order Screenshot</a>`;
+                        }
+                        if (order.delivered_screenshot) {
+                            html += `<a href="${order.delivered_screenshot}" target="_blank" class="screenshot-link"><i class="fas fa-truck"></i> Delivered Screenshot</a>`;
+                        }
+                        if (order.review_screenshot) {
+                            html += `<a href="${order.review_screenshot}" target="_blank" class="screenshot-link"><i class="fas fa-star"></i> Review Screenshot</a>`;
+                        }
+                        if (order.review_link) {
+                            html += `<a href="${order.review_link}" target="_blank" class="screenshot-link"><i class="fas fa-external-link-alt"></i> Review Link</a>`;
+                        }
+                        html += `
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="text-center py-3 text-muted"><i class="fas fa-inbox"></i> No orders found for this date</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading orders:', error);
+                container.innerHTML = '<div class="text-center py-3 text-danger"><i class="fas fa-exclamation-triangle"></i> Failed to load orders</div>';
+            });
+    }
+
+    function toggleScreenshots(elementId) {
+        const element = document.getElementById(elementId);
+        if (element.classList.contains('show')) {
+            element.classList.remove('show');
+        } else {
+            element.classList.add('show');
+        }
+    }
+
+    // Attach click handlers to date rows
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateRows = document.querySelectorAll('.date-row-toggle');
+        dateRows.forEach(row => {
+            const dateAttr = row.getAttribute('data-date');
+            const sellerGroup = row.closest('.seller-group');
+            if (sellerGroup) {
+                const sellerId = sellerGroup.querySelector('.seller-header').getAttribute('onclick').match(/'seller_(\d+)'/)[1];
+                const index = dateAttr;
+                const dateCell = row.querySelector('td:nth-child(2)');
+                const date = dateCell ? dateCell.innerText : '';
+                
+                row.addEventListener('click', function(e) {
+                    // Don't toggle if clicking on button or form elements
+                    if (e.target.tagName === 'BUTTON' || e.target.closest('form') || e.target.closest('.btn-approve')) {
+                        return;
+                    }
+                    toggleOrderDetails(sellerId, index, date);
+                });
+            }
+        });
+    });
 
     let totalPending = 0, totalPaid = 0, grandTotal = 0;
     {% for seller in sellers %}
