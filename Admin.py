@@ -1,12 +1,38 @@
 from flask import Blueprint, render_template, request, redirect, session, jsonify
 from email_utils import send_email
 from db import db
+from datetime import datetime
+import pytz
 
 admin_bp = Blueprint('admin', __name__)
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
-    
+
+# IST Timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_now():
+    """Return current datetime in IST"""
+    return datetime.now(IST)
+
+def format_ist_datetime(dt):
+    """Format datetime to IST string"""
+    if dt is None:
+        return '-'
+    if dt.tzinfo is None:
+        dt = IST.localize(dt)
+    return dt.astimezone(IST).strftime('%d-%m-%Y %H:%M:%S')
+
+def format_ist_date(dt):
+    """Format date to IST string"""
+    if dt is None:
+        return '-'
+    if dt.tzinfo is None:
+        dt = IST.localize(dt)
+    return dt.astimezone(IST).strftime('%d-%m-%Y')
+
+
 @admin_bp.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if session.get('admin_logged_in'):
@@ -79,12 +105,14 @@ def approve_seller(seller_id):
     cur = conn.cursor()
     
     try:
-        cur.execute("UPDATE sellers SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (seller_id,))
+        # Use IST for approved_at
+        ist_now = get_ist_now()
+        cur.execute("UPDATE sellers SET status = 'approved', approved_at = %s WHERE id = %s", (ist_now, seller_id))
         conn.commit()
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
-        seller=cur.fetchone()
+        seller = cur.fetchone()
 
-        # ✅ Send approval email to seller
+        # Send approval email to seller
         send_email(
             to_email=seller[0],
             subject="Seller Account Approved - HeavyDeals",
@@ -112,9 +140,9 @@ def reject_seller(seller_id):
         cur.execute("UPDATE sellers SET status = 'rejected' WHERE id = %s", (seller_id,))
         conn.commit()
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
-        seller=cur.fetchone()
+        seller = cur.fetchone()
 
-        # ✅ Send approval email to seller
+        # Send rejection email to seller
         send_email(
             to_email=seller[0],
             subject="Seller Account Rejected - HeavyDeals",
@@ -144,8 +172,8 @@ def all_sellers():
         # Get all sellers
         cur.execute("""
             SELECT id, username, name, email, phone, status, 
-                   TO_CHAR(created_at, 'DD-MM-YYYY') as created_at,
-                   TO_CHAR(approved_at, 'DD-MM-YYYY') as approved_at
+                   created_at,
+                   approved_at
             FROM sellers 
             ORDER BY created_at DESC
         """)
@@ -158,8 +186,8 @@ def all_sellers():
                 'email': row[3],
                 'phone': row[4] or '-',
                 'status': row[5],
-                'created_at': row[6] or '-',
-                'approved_at': row[7] or '-'
+                'created_at': format_ist_datetime(row[6]) if row[6] else '-',
+                'approved_at': format_ist_datetime(row[7]) if row[7] else '-'
             }
             all_sellers_list.append(seller)
             
@@ -200,32 +228,54 @@ def admin_daily_payments():
         for seller in sellers:
             seller_id, seller_name, seller_username, seller_email, seller_phone = seller
             
-            # Get all orders for this seller grouped by date
+            # First, get all unique order dates for this seller
             cur.execute("""
-                SELECT 
-                    DATE(o.order_placed_at) as order_date,
-                    COUNT(*) as order_count,
-                    SUM(o.order_amount) as total_amount,
-                    COALESCE(dp.status, 'pending') as payment_status,  
-                    dp.id as payment_id,
-                    dp.paid_at
+                SELECT DISTINCT 
+                    DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') as order_date
                 FROM orders o
-                LEFT JOIN daily_payments dp ON dp.seller_id = o.seller_id AND DATE(dp.payment_date) = DATE(o.order_placed_at)
-                WHERE o.seller_id = %s AND o.status IN ('pending', 'review_submitted', 'approved')
-                GROUP BY DATE(o.order_placed_at), dp.status, dp.id, dp.paid_at
+                WHERE o.seller_id = %s 
+                    AND o.status IN ('pending', 'review_submitted', 'approved', 'paid')
                 ORDER BY order_date DESC
             """, (seller_id,))
             
-            payments = cur.fetchall()
+            order_dates = cur.fetchall()
             payment_list = []
             
-            for p in payments:
-                order_date = p[0]
-                order_count = p[1]
-                total_amount = float(p[2]) if p[2] else 0
-                payment_status = p[3] if p[3] else 'pending'  
-                payment_id = p[4]
-                paid_at = p[5].strftime('%d-%m-%Y %H:%M') if p[5] else '-'
+            for date_row in order_dates:
+                order_date = date_row[0]
+                
+                # Get order details for this date
+                cur.execute("""
+                    SELECT 
+                        COUNT(*) as order_count,
+                        SUM(o.order_amount) as total_amount
+                    FROM orders o
+                    WHERE o.seller_id = %s 
+                        AND DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = %s
+                        AND o.status IN ('pending', 'review_submitted', 'approved', 'paid')
+                """, (seller_id, order_date))
+                
+                order_stats = cur.fetchone()
+                order_count = order_stats[0]
+                total_amount = float(order_stats[1]) if order_stats[1] else 0
+                
+                # Get payment status from daily_payments table
+                cur.execute("""
+                    SELECT id, status, paid_at
+                    FROM daily_payments
+                    WHERE seller_id = %s AND payment_date = %s
+                """, (seller_id, order_date))
+                
+                payment_record = cur.fetchone()
+                
+                if payment_record:
+                    payment_id = payment_record[0]
+                    payment_status = payment_record[1]
+                    paid_at = payment_record[2]
+                else:
+                    payment_id = None
+                    payment_status = 'pending'
+                    paid_at = None
                 
                 payment_list.append({
                     'payment_date': order_date.strftime('%d-%m-%Y') if order_date else '-',
@@ -233,7 +283,7 @@ def admin_daily_payments():
                     'total_amount': total_amount,
                     'status': payment_status,  
                     'payment_id': payment_id,
-                    'paid_at': paid_at
+                    'paid_at': format_ist_datetime(paid_at) if paid_at else '-'
                 })
             
             # Only add seller if they have orders
@@ -249,6 +299,8 @@ def admin_daily_payments():
         
     except Exception as e:
         print(f"Admin daily payments error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         cur.close()
         conn.close()
@@ -277,23 +329,24 @@ def approve_payment(payment_id):
         seller_id = payment[0]
         payment_date = payment[1]
         
-        # Update daily_payments table
+        # Update daily_payments table with IST
+        ist_now = get_ist_now()
         cur.execute("""
             UPDATE daily_payments 
-            SET status = 'paid', paid_at = CURRENT_TIMESTAMP, notes = %s
+            SET status = 'paid', paid_at = %s, notes = %s
             WHERE id = %s
-        """, (notes, payment_id))
+        """, (ist_now, notes, payment_id))
         conn.commit()
         
-        # ✅ Update order status from 'approved' to 'paid'
+        # Update order status from 'approved' to 'paid'
         cur.execute("""
             UPDATE orders 
             SET status = 'paid', 
-                paid_at = CURRENT_TIMESTAMP
+                paid_at = %s
             WHERE seller_id = %s 
-            AND DATE(order_placed_at) = %s
+            AND DATE(order_placed_at at time zone 'UTC' at time zone 'Asia/Kolkata') = %s
             AND status = 'approved'
-        """, (seller_id, payment_date))
+        """, (ist_now, seller_id, payment_date))
         conn.commit()
         
         updated_count = cur.rowcount
@@ -354,31 +407,33 @@ def create_payment():
         cur.execute("SELECT id FROM daily_payments WHERE seller_id=%s AND payment_date=%s", (seller_id, payment_date_db))
         existing = cur.fetchone()
         
+        ist_now = get_ist_now()
+        
         if existing:
             # Update existing to paid
             cur.execute("""
                 UPDATE daily_payments 
-                SET status = 'paid', paid_at = CURRENT_TIMESTAMP, notes = 'Marked as paid by admin'
+                SET status = 'paid', paid_at = %s, notes = 'Marked as paid by admin'
                 WHERE id = %s
-            """, (existing[0],))
+            """, (ist_now, existing[0]))
         else:
             # Create new payment record
             cur.execute("""
                 INSERT INTO daily_payments (seller_id, payment_date, total_amount, order_count, status, paid_at, notes)
-                VALUES (%s, %s, %s, %s, 'paid', CURRENT_TIMESTAMP, 'Marked as paid by admin')
-            """, (seller_id, payment_date_db, total_amount, order_count))
+                VALUES (%s, %s, %s, %s, 'paid', %s, 'Marked as paid by admin')
+            """, (seller_id, payment_date_db, total_amount, order_count, ist_now))
         
         conn.commit()
         
-        # ✅ Update order status from 'approved' to 'paid'
+        # Update order status from 'approved' to 'paid'
         cur.execute("""
             UPDATE orders 
             SET status = 'paid', 
-                paid_at = CURRENT_TIMESTAMP
+                paid_at = %s
             WHERE seller_id = %s 
-            AND DATE(order_placed_at) = %s
+            AND DATE(order_placed_at at time zone 'UTC' at time zone 'Asia/Kolkata') = %s
             AND status = 'approved'
-        """, (seller_id, payment_date_db))
+        """, (ist_now, seller_id, payment_date_db))
         conn.commit()
         
         updated_count = cur.rowcount
@@ -478,8 +533,8 @@ def admin_payment_history():
                     "total_orders": b[2],
                     "total_refund_amount": float(b[3]) if b[3] else 0,
                     "status": b[4] if b[4] else 'pending',
-                    "created_at": b[5].strftime('%d-%m-%Y %H:%M') if b[5] else '-',
-                    "processed_at": b[6].strftime('%d-%m-%Y %H:%M') if b[6] else '-',
+                    "created_at": format_ist_datetime(b[5]) if b[5] else '-',
+                    "processed_at": format_ist_datetime(b[6]) if b[6] else '-',
                     "order_items": item_list
                 })
             
@@ -530,13 +585,14 @@ def update_payment_batch_status(batch_id):
         batch_id_value = result[0]
         
         # Update payment_batches table
+        ist_now = get_ist_now()
         cur.execute("""
             UPDATE payment_batches 
             SET status = %s, 
-                processed_at = CASE WHEN %s = 'completed' THEN CURRENT_TIMESTAMP ELSE processed_at END,
+                processed_at = CASE WHEN %s = 'completed' THEN %s ELSE processed_at END,
                 notes = %s
             WHERE id = %s
-        """, (new_status, new_status, notes, batch_id))
+        """, (new_status, new_status, ist_now, notes, batch_id))
         conn.commit()
         
         # If status is completed, also update payment_batch_items
@@ -562,7 +618,6 @@ def update_payment_batch_status(batch_id):
     return redirect('/admin/payment-history')
 
 
-# ✅ ONLY ONE admin_batch_refund function - DUPLICATE REMOVED
 @admin_bp.route('/admin/batch-refund')
 def admin_batch_refund():
     if not session.get('admin_logged_in'):
@@ -624,7 +679,7 @@ def admin_batch_refund():
                     "status": item[4],
                     "buyer_name": item[5],
                     "buyer_email": item[6],
-                    "order_date": item[7].strftime('%d-%m-%Y') if item[7] else '-'
+                    "order_date": format_ist_datetime(item[7]) if item[7] else '-'
                 })
             
             batches_data.append({
@@ -636,8 +691,8 @@ def admin_batch_refund():
                 "total_refund_amount": float(total_refund) if total_refund else 0,
                 "unique_buyers": len(buyer_set),
                 "status": batch_status,
-                "created_at": created_at.strftime('%d-%m-%Y %H:%M') if created_at else '-',
-                "processed_at": processed_at.strftime('%d-%m-%Y %H:%M') if processed_at else '-',
+                "created_at": format_ist_datetime(created_at) if created_at else '-',
+                "processed_at": format_ist_datetime(processed_at) if processed_at else '-',
                 "order_items": item_list
             })
         
@@ -688,14 +743,15 @@ def mark_order_as_paid():
         refund_amount = float(order[1]) if order[1] else 0
         buyer_amount = refund_amount / 2  # 50% to buyer
         
-        # Update order status to 'paid'
+        # Update order status to 'paid' with IST
+        ist_now = get_ist_now()
         cur.execute("""
             UPDATE orders 
             SET status = 'paid', 
-                paid_at = CURRENT_TIMESTAMP,
+                paid_at = %s,
                 buyer_refund_amount = %s
             WHERE id = %s
-        """, (buyer_amount, order_id))
+        """, (ist_now, buyer_amount, order_id))
         
         conn.commit()
         
@@ -713,9 +769,9 @@ def mark_order_as_paid():
             cur.execute("""
                 UPDATE payment_batches 
                 SET status = 'completed', 
-                    processed_at = CURRENT_TIMESTAMP
+                    processed_at = %s
                 WHERE batch_id = %s
-            """, (batch_id,))
+            """, (ist_now, batch_id))
             conn.commit()
         
         return jsonify({
