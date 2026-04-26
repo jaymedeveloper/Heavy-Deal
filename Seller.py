@@ -1,8 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, session, jsonify
 from db import db
 import re
+from datetime import datetime
+import pytz
 
 seller_bp = Blueprint('seller', __name__)
+
+# IST Timezone
+IST = pytz.timezone('Asia/Kolkata')
 
 
 @seller_bp.route("/seller/register", methods=['GET', 'POST'])
@@ -121,14 +126,12 @@ def seller_dashboard():
         cur.execute("SELECT COUNT(*) FROM orders WHERE seller_id = %s", (seller_id,))
         total_orders = cur.fetchone()[0] or 0
         
-        # ✅ Changed from 'approved' to 'approved'
         cur.execute("SELECT COUNT(*) FROM orders WHERE seller_id = %s AND status = 'approved'", (seller_id,))
         approved_orders = cur.fetchone()[0] or 0
         
         cur.execute("SELECT COUNT(*) FROM orders WHERE seller_id = %s AND status = 'pending'", (seller_id,))
         pending_orders = cur.fetchone()[0] or 0
         
-        # ✅ Changed from 'approved' to 'approved'
         cur.execute("SELECT COALESCE(SUM(refund_amount), 0) FROM orders WHERE seller_id = %s AND status = 'approved'", (seller_id,))
         total_amount = cur.fetchone()[0] or 0
     except Exception as e:
@@ -156,7 +159,6 @@ def seller_products():
     products = []
     
     try:
-        # Get products with order count
         cur.execute("""
             SELECT p.id, p.name, p.brand, p.refund, p.order_limit, p.link,
                    COALESCE(COUNT(o.id), 0) as ordered_count
@@ -185,6 +187,7 @@ def seller_products():
         conn.close()
     
     return render_template("Seller/seller_products.html", seller_name=seller_name, products=products)
+
 
 @seller_bp.route("/seller/products/add", methods=["POST"])
 def add_product():
@@ -228,6 +231,9 @@ def seller_orders():
     orders = []
     
     try:
+        # Set timezone for this session
+        cur.execute("SET timezone = 'Asia/Kolkata'")
+        
         # First, get daily payment status for each date
         cur.execute("""
             SELECT payment_date, status 
@@ -237,12 +243,14 @@ def seller_orders():
         
         daily_payment_status = {}
         for row in cur.fetchall():
-            payment_date = row[0].strftime('%d-%m-%Y')
-            daily_payment_status[payment_date] = row[1]
+            if row[0]:
+                payment_date = row[0].strftime('%d-%m-%Y')
+                daily_payment_status[payment_date] = row[1]
         
-        # Then get all orders
+        # Then get all orders with IST time
         cur.execute("""
-            SELECT o.id, o.order_id, o.product_name, o.order_amount, o.status, o.order_placed_at, 
+            SELECT o.id, o.order_id, o.product_name, o.order_amount, o.status, 
+                   o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' as order_placed_ist,
                    b.name, o.refund_amount, o.order_screenshot, o.delivered_screenshot, 
                    o.review_screenshot, o.review_link
             FROM orders o 
@@ -254,10 +262,7 @@ def seller_orders():
         for r in cur.fetchall():
             order_date = ""
             if r[5]:
-                if hasattr(r[5], 'strftime'):
-                    order_date = r[5].strftime('%d-%m-%Y')
-                else:
-                    order_date = str(r[5])[:10] if str(r[5]) else ""
+                order_date = r[5].strftime('%d-%m-%Y')
             
             orders.append({
                 "id": r[0],
@@ -349,18 +354,15 @@ def bulk_review_action():
     conn = db()
     cur = conn.cursor()
     
-    # Generate unique batch ID
     import uuid
     batch_id = str(uuid.uuid4())[:8].upper()
     
     try:
-        # Process each action
         for action in actions:
             order_id = action.get('order_id')
             action_type = action.get('action')
             rejection_reason = action.get('reason', '')
             
-            # Verify order belongs to this seller and is in review_submitted status
             cur.execute("SELECT id, refund_amount, order_id, product_name FROM orders WHERE id=%s AND seller_id=%s AND status='review_submitted'", (order_id, seller_id))
             order = cur.fetchone()
             
@@ -371,7 +373,6 @@ def bulk_review_action():
             if action_type == 'approve':
                 refund_amount = float(order[1]) if order[1] else 0
                 
-                # ✅ Changed: 'approved' to 'approved'
                 cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (order_id,))
                 
                 approved_orders.append({
@@ -394,19 +395,16 @@ def bulk_review_action():
                 rejected_orders.append(order_id)
                 results.append({"order_id": order_id, "status": "rejected"})
         
-        # If there are approved orders, create a payment batch
         if approved_orders:
             total_refund = sum(o['refund_amount'] for o in approved_orders)
             total_orders_count = len(approved_orders)
             
-            # Insert into payment_batches
             cur.execute("""
                 INSERT INTO payment_batches (batch_id, seller_id, seller_name, total_orders, 
                     total_refund_amount, status, created_at)
                 VALUES (%s, %s, %s, %s, %s, 'pending', CURRENT_TIMESTAMP)
             """, (batch_id, seller_id, seller_name, total_orders_count, total_refund))
             
-            # Insert individual items
             for order in approved_orders:
                 cur.execute("""
                     INSERT INTO payment_batch_items (batch_id, order_id, order_refund_amount, status)
@@ -450,11 +448,9 @@ def approve_review(order_id):
         if order:
             refund_amount = float(order[0]) if order[0] else 0
             
-            # ✅ Changed: 'approved' to 'approved'
             cur.execute("UPDATE orders SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = %s", (order_id,))
             conn.commit()
             
-            # Create payment batch for single approval
             import uuid
             batch_id = str(uuid.uuid4())[:8].upper()
             
@@ -512,9 +508,6 @@ def reject_review(order_id):
     return redirect("/seller/review-requests")
 
 
-
-
-
 @seller_bp.route("/seller/payment-history")
 def seller_payment_history():
     if not session.get("seller_id"):
@@ -528,7 +521,6 @@ def seller_payment_history():
     batches = []
     
     try:
-        # First check what column exists in payment_batch_items table
         cur.execute("""
             SELECT column_name 
             FROM information_schema.columns 
@@ -536,14 +528,12 @@ def seller_payment_history():
         """)
         columns = [col[0] for col in cur.fetchall()]
         
-        # Determine which column name to use
         batch_ref_column = None
         if 'batch_id' in columns:
             batch_ref_column = 'batch_id'
         else:
             return render_template("Seller/seller_payment_history.html", batches=batches, seller_name=seller_name)
         
-        # Get all payment batches for this seller
         cur.execute("""
             SELECT pb.id, pb.batch_id, pb.total_orders, pb.total_refund_amount, 
                    pb.status, pb.created_at, pb.processed_at
@@ -554,7 +544,6 @@ def seller_payment_history():
         
         rows = cur.fetchall()
         for r in rows:
-            # Get individual orders for this batch - use correct column name
             query = f"""
                 SELECT pbi.order_id, o.order_id as order_number, o.product_name, 
                        pbi.order_refund_amount, pbi.status
@@ -597,6 +586,7 @@ def seller_payment_history():
     
     return render_template("Seller/seller_payment_history.html", batches=batches, seller_name=seller_name)
 
+
 @seller_bp.route("/seller/product/ordered-count/<int:product_id>")
 def get_product_ordered_count(product_id):
     if not session.get("seller_id"):
@@ -638,12 +628,10 @@ def update_product_limit():
     conn = db()
     cur = conn.cursor()
     try:
-        # Check if product belongs to this seller
         cur.execute("SELECT id FROM products WHERE id=%s AND seller_id=%s", (product_id, seller_id))
         if not cur.fetchone():
             return jsonify({"success": False, "error": "Product not found"})
         
-        # Update the limit
         cur.execute("UPDATE products SET order_limit = %s WHERE id = %s", (new_limit, product_id))
         conn.commit()
         
