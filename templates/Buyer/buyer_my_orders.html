@@ -382,7 +382,7 @@
                             <td><span class="fw-semibold">{{ o.order_id }}</span></td>
                             <td><span title="{{ o.product_name }}">{{ o.product_name[:35] }}{% if o.product_name|length > 35 %}...{% endif %}</span></td>
                             <td>₹{{ o.order_amount }}</td>
-                            <td style="color: var(--orange); font-weight: 600;">₹{{ o.refund_amount }}</td>
+                            <td style="color: var(--orange); font-weight: 600;">₹{{ o.refund_amount/2 | int }}</td>
                             <td>
                                 {% if o.status == 'pending' %}
                                 <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
@@ -509,4 +509,3 @@
 </body>
 
 </html>
-
