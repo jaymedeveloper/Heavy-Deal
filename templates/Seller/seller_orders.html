@@ -753,22 +753,38 @@
                 const group = grouped[dateKey];
                 const safeId = dateKey.replace(/[^a-zA-Z0-9]/g, '_');
                 const displayDate = formatDateForNote(dateKey);
+                
+                // ✅ Check daily payment status from first order (all orders on same date share same status)
+                const dailyStatus = group.orders[0]?.daily_payment_status || 'pending';
+                const isPaid = dailyStatus === 'paid';
+                
+                let amountColor = isPaid ? 'style="color: #16a34a; font-weight: 700; background-color: #dcfce7;"' : 'style="color: var(--orange); font-weight: 700;"';
+                
+                let payButtonHtml = '';
+                if (isPaid) {
+                    payButtonHtml = `<span class="btn-paid"><i class="fas fa-check-circle me-1"></i> Payment Received</span>`;
+                } else {
+                    payButtonHtml = `<button class="btn-pay" onclick="event.stopPropagation(); handleGroupPayment('${dateKey}', ${group.totalAmount}, ${group.orderCount})">
+                                        <i class="fas fa-google-pay"></i> Pay ₹${group.totalAmount.toLocaleString('en-IN')}
+                                    </button>`;
+                }
 
+                // Date group header row
                 html += `<tr class="day-group-header" onclick="toggleDayGroup('${safeId}')">
                             <td><i class="fas fa-chevron-right toggle-icon" id="icon_${safeId}"></i></td>
                             <td colspan="7">
                                 <strong><i class="fas fa-calendar-day me-2"></i>${displayDate}</strong>
                                 <div class="day-summary">
                                     <span><i class="fas fa-shopping-bag me-1"></i>${group.orderCount} Orders</span>
-                                    <span style="color:var(--orange);font-weight:700;"><i class="fas fa-rupee-sign me-1"></i>₹${group.totalAmount.toLocaleString('en-IN')}</span>
+                                    <span ${amountColor}><i class="fas fa-rupee-sign me-1"></i>₹${group.totalAmount.toLocaleString('en-IN')}</span>
                                     ${group.pendingApprovalCount > 0 ? `<span class="pending-approval-badge"><i class="fas fa-hourglass-half me-1"></i>${group.pendingApprovalCount} Pending Approval</span>` : ''}
+                                    ${isPaid ? '<span class="status-badge status-paid"><i class="fas fa-check-circle me-1"></i>Paid</span>' : '<span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>'}
                                 </div>
-                                <button class="btn-pay" onclick="event.stopPropagation(); handleGroupPayment('${dateKey}', ${group.totalAmount}, ${group.orderCount})">
-                                    <i class="fas fa-google-pay"></i> Pay ₹${group.totalAmount.toLocaleString('en-IN')}
-                                </button>
+                                ${payButtonHtml}
                             </td>
-                          </tr>`;
+                          </td>`;
 
+                // Individual order rows
                 group.orders.forEach(order => {
                     let statusHtml = '';
                     if (order.status === 'pending') statusHtml = '<span class="status-badge status-pending">Pending</span>';
@@ -841,7 +857,7 @@
                     <div class="col-12">
                         <table class="table table-sm table-borderless">
                             <tr><td width="120"><strong>Order ID:</strong></td><td>${order.order_id}</td></tr>
-                            <tr><td><strong>Product:</strong></td><td>${order.product_name}</td></tr>
+                            </tr><td><strong>Product:</strong></td><td>${order.product_name}</td></tr>
                             <tr><td><strong>Buyer:</strong></td><td>${order.buyer_name}</td></tr>
                             <tr><td><strong>Amount:</strong></td><td>₹${order.order_amount}</td></tr>
                             <tr><td><strong>Refund:</strong></td><td style="color:var(--orange);">₹${order.refund_amount}</td></tr>
