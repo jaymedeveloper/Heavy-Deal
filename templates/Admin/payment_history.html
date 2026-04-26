@@ -513,12 +513,14 @@
                                         </td>
                                         <td>
                                             {% if item.buyer_upi and item.buyer_upi != '-' %}
+                                            {% if item.order_status != 'paid' %}
                                             <a class="btn-pay"
                                                 href="upi://pay?pa={{ item.buyer_upi }}&pn=HeavyDeals&am={{ (item.refund_amount / 2)|int }}&cu=INR&tn={{ item.order_number }}"
                                                 target="_blank">
                                                 <i class="fas fa-rupee-sign me-1"></i> Pay ₹{{ (item.refund_amount /
                                                 2)|int }}
                                             </a>
+                                            {% endif %}
                                             <div class="small text-muted mt-1">{{ item.buyer_upi }}</div>
                                             {% else %}
                                             <span class="upi-text">No UPI added</span>
@@ -657,12 +659,34 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        buttonElement.outerHTML = '<span class="text-success small"><i class="fas fa-check-circle me-1"></i>Paid - ' + data.amount + '</span>';
+                        // Remove the Mark Paid button completely
+                        buttonElement.outerHTML = '<span class="text-success small"><i class="fas fa-check-circle me-1"></i>Already Paid</span>';
 
+                        // Update order status badge
                         var statusBadge = document.querySelector('#order-row-' + orderId + ' .order-status-badge');
                         if (statusBadge) {
                             statusBadge.innerHTML = '<i class="fas fa-rupee-sign me-1"></i>Paid';
                             statusBadge.className = 'order-status-badge order-status-paid';
+                        }
+
+                        // Remove UPI pay button from the previous column
+                        var upiColumn = document.querySelector('#order-row-' + orderId + ' td:nth-child(5)');
+                        if (upiColumn) {
+                            var upiPayButton = upiColumn.querySelector('.btn-pay');
+                            if (upiPayButton) {
+                                // Keep only UPI ID, remove the pay button
+                                upiPayButton.remove();
+                            }
+                        }
+
+                        // Update the entire row to reflect paid status
+                        var row = document.getElementById('order-row-' + orderId);
+                        if (row) {
+                            // Update Pay Action column
+                            var payActionCell = row.querySelector('td:last-child');
+                            if (payActionCell) {
+                                payActionCell.innerHTML = '<span class="text-success small"><i class="fas fa-check-circle me-1"></i>Already Paid</span>';
+                            }
                         }
 
                         alert('Success!\n' + data.message);
