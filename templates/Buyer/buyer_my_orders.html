@@ -380,35 +380,28 @@
                         {% for o in orders %}
                         <tr id="row-{{ o.id }}">
                             <td><span class="fw-semibold">{{ o.order_id }}</span></td>
-                            <td><span title="{{ o.product_name }}">{{ o.product_name[:35] }}{% if o.product_name|length
-                                    > 35 %}...{% endif %}</span></td>
+                            <td><span title="{{ o.product_name }}">{{ o.product_name[:35] }}{% if o.product_name|length > 35 %}...{% endif %}</span></td>
                             <td>₹{{ o.order_amount }}</td>
                             <td style="color: var(--orange); font-weight: 600;">₹{{ o.refund_amount }}</td>
                             <td>
                                 {% if o.status == 'pending' %}
-                                <span class="status-badge status-pending"><i
-                                        class="fas fa-clock me-1"></i>Pending</span>
+                                <span class="status-badge status-pending"><i class="fas fa-clock me-1"></i>Pending</span>
                                 {% elif o.status == 'review_submitted' %}
-                                <span class="status-badge status-review_submitted"><i
-                                        class="fas fa-star me-1"></i>Review Submitted</span>
+                                <span class="status-badge status-review_submitted"><i class="fas fa-star me-1"></i>Review Submitted</span>
                                 {% elif o.status == 'approved' %}
-                                <span class="status-badge status-approved"><i
-                                        class="fas fa-check-circle me-1"></i>Approved</span>
+                                <span class="status-badge status-approved"><i class="fas fa-check-circle me-1"></i>Approved</span>
                                 {% elif o.status == 'paid' %}
                                 <span class="status-badge status-paid"><i class="fas fa-rupee-sign me-1"></i>Paid</span>
                                 {% elif o.status == 'rejected' %}
-                                <span class="status-badge status-rejected"><i
-                                        class="fas fa-times-circle me-1"></i>Rejected</span>
+                                <span class="status-badge status-rejected"><i class="fas fa-times-circle me-1"></i>Rejected</span>
                                 {% else %}
                                 <span class="status-badge status-pending">{{ o.status }}</span>
                                 {% endif %}
                             </td>
-                            <td>{% if o.order_placed_at %}{{ o.order_placed_at.strftime('%d-%m-%Y') if o.order_placed_at
-                                else '-' }}{% else %}-{% endif %}</td>
+                            <td>{% if o.order_placed_at and o.order_placed_at != '-' %}{{ o.order_placed_at }}{% else %}-{% endif %}</td>
                             <td>
                                 {% if o.status == 'pending' %}
-                                <a href="/buyer/submit-review/{{ o.id }}" class="btn-review"><i
-                                        class="fas fa-star me-1"></i>Submit Review</a>
+                                <a href="/buyer/submit-review/{{ o.id }}" class="btn-review"><i class="fas fa-star me-1"></i>Submit Review</a>
                                 {% elif o.status == 'review_submitted' %}
                                 <span class="text-muted small">Waiting for approval</span>
                                 {% elif o.status == 'approved' or o.status == 'paid' %}
@@ -420,8 +413,7 @@
                                 </span>
                                 {% endif %}
                             </td>
-                            <td><button class="btn-detail ms-2" onclick="showOrderDetails({{ loop.index0 }})"><i
-                                        class="fas fa-eye me-1"></i>Details</button></td>
+                            <td><button class="btn-detail ms-2" onclick="showOrderDetails({{ loop.index0 }})"><i class="fas fa-eye me-1"></i>Details</button></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -517,3 +509,4 @@
 </body>
 
 </html>
+
