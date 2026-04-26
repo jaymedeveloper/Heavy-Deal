@@ -2,7 +2,7 @@ import yagmail
 
 # Gmail Configuration
 SENDER_EMAIL = "heavydeals567@gmail.com"
-SENDER_PASSWORD = "xqsj qywl oaqh xajc"  # ✅ Apna app password yahan daalo
+SENDER_PASSWORD = "xqsj qywl oaqh xajc"
 
 def send_email(to_email, subject, message, is_html=False):
     """
@@ -49,16 +49,16 @@ def send_welcome_email(to_email, buyer_name):
                                 <span style="font-size:24px;">🛍️</span>
                                 <h1 style="color:#f97316; margin:2px 0 0; font-size:18px;">HeavyDeals</h1>
                                 <p style="color:#94a3b8; margin:2px 0 0; font-size:10px;">Earn Rewards for Reviews</p>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Welcome -->
                         <tr>
                             <td style="padding:10px 10px 5px;">
                                 <h2 style="color:#0a192f; margin:0; font-size:17px;">Welcome, {buyer_name}! 🎉</h2>
                                 <p style="color:#64748b; margin:4px 0 0; font-size:12px;">Get ready to earn rewards!</p>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Bonus -->
                         <tr>
@@ -67,17 +67,18 @@ def send_welcome_email(to_email, buyer_name):
                                     <tr><td style="padding:6px; text-align:center;">
                                         <p style="color:#0a192f; margin:0; font-size:11px; font-weight:bold;">✨ First Order Bonus</p>
                                         <p style="color:#f97316; margin:2px 0 0; font-size:16px; font-weight:bold;">UP TO ₹500 EXTRA</p>
-                                    </td></tr>
+                                     </td>
+                                 </tr>
                                 </table>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Steps Title -->
                         <tr>
                             <td style="padding:8px 10px 0;">
                                 <p style="color:#0a192f; text-align:center; margin:0; font-weight:bold; font-size:12px;">⚡ How It Works</p>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Steps -->
                         <tr>
@@ -86,23 +87,26 @@ def send_welcome_email(to_email, buyer_name):
                                     <tr>
                                         <td width="33%" align="center" style="padding:2px;">
                                             <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
-                                                <tr><td align="center"><span style="font-size:18px;">📦</span><br><span style="font-size:10px;">Order</span></td></tr>
-                                            </table>
+                                                <tr><td align="center"><span style="font-size:18px;">📦</span><br><span style="font-size:10px;">Order</span></td>
+                                            </tr>
+                                        </table>
+                                         </td>
+                                        <td width="33%" align="center" style="padding:2px;">
+                                            <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
+                                                <tr><td align="center"><span style="font-size:18px;">⭐</span><br><span style="font-size:10px;">Review</span></td>
+                                            </tr>
+                                        </table>
                                         </td>
                                         <td width="33%" align="center" style="padding:2px;">
                                             <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
-                                                <tr><td align="center"><span style="font-size:18px;">⭐</span><br><span style="font-size:10px;">Review</span></td></tr>
-                                            </table>
+                                                <tr><td align="center"><span style="font-size:18px;">💰</span><br><span style="font-size:10px;">Get Paid</span></td>
+                                            </tr>
+                                        </table>
                                         </td>
-                                        <td width="33%" align="center" style="padding:2px;">
-                                            <table width="100%" cellpadding="4" cellspacing="0" border="0" bgcolor="#f8fafc" style="background:#f8fafc; border-radius:6px;">
-                                                <tr><td align="center"><span style="font-size:18px;">💰</span><br><span style="font-size:10px;">Get Paid</span></td></tr>
-                                            </table>
-                                        </td>
-                                    </tr>
+                                     </tr>
                                 </table>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Benefits -->
                         <tr>
@@ -113,10 +117,11 @@ def send_welcome_email(to_email, buyer_name):
                                         <p style="color:#334155; margin:2px 0; font-size:10px;">✅ 50% refund on every review</p>
                                         <p style="color:#334155; margin:2px 0; font-size:10px;">✅ Bonus for first 5 orders</p>
                                         <p style="color:#334155; margin:2px 0; font-size:10px;">✅ Priority support</p>
-                                    </td></tr>
-                                </table>
-                            </td>
-                        </tr>
+                                     </td>
+                                </tr>
+                            </table>
+                             </td>
+                         </tr>
                         
                         <!-- Pro Tip -->
                         <tr>
@@ -124,17 +129,18 @@ def send_welcome_email(to_email, buyer_name):
                                 <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fef3c7" style="background:#fef3c7; border-radius:6px;">
                                     <tr><td style="padding:4px;">
                                         <p style="color:#d97706; margin:0; font-size:9px;"><b>💡 Tip:</b> Quality screenshots = faster approval!</p>
-                                    </td></tr>
-                                </table>
-                            </td>
-                        </tr>
+                                     </td>
+                                </tr>
+                            </table>
+                             </td>
+                         </tr>
                         
                         <!-- Button -->
                         <tr>
                             <td align="center" style="padding:8px 10px 5px;">
                                 <a href="https://heavy-deal-a5in.onrender.com/buyer/dashboard" style="display:inline-block; background:#f97316; color:white; text-decoration:none; padding:6px 18px; border-radius:30px; font-weight:bold; font-size:12px;">🚀 Start Earning</a>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                         <!-- Footer -->
                         <tr>
@@ -142,8 +148,8 @@ def send_welcome_email(to_email, buyer_name):
                                 <hr style="margin:5px 0; border:none; border-top:1px solid #e2e8f0;">
                                 <p style="color:#64748b; margin:5px 0 0; text-align:center; font-size:9px;">Need help? <a href="mailto:heavydeals567@gmail.com" style="color:#f97316;">heavydeals567@gmail.com</a></p>
                                 <p style="color:#64748b; margin:3px 0 0; text-align:center; font-size:9px;">© HeavyDeals • Earn Rewards</p>
-                            </td>
-                        </tr>
+                             </td>
+                         </tr>
                         
                     </table>
                 </td>
