@@ -4,9 +4,26 @@ from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
 from email_utils import send_email, send_welcome_email
+from datetime import datetime
+import pytz
 
 buyer_bp = Blueprint('buyer', __name__)
 oauth = OAuth()
+
+# IST Timezone
+IST = pytz.timezone('Asia/Kolkata')
+
+def get_ist_now():
+    """Return current datetime in IST"""
+    return datetime.now(IST)
+
+def format_ist_datetime(dt):
+    """Format datetime to IST string"""
+    if dt is None:
+        return '-'
+    if dt.tzinfo is None:
+        dt = IST.localize(dt)
+    return dt.astimezone(IST).strftime('%d-%m-%Y %H:%M:%S')
 
 cloudinary.config(
     cloud_name="dt6rrmzxw",
@@ -49,7 +66,7 @@ def buyer_auth():
                     session['buyer_email'] = email
                     session.permanent = True
                     
-                    # ✅ Check if mobile is missing
+                    # Check if mobile is missing
                     if not user[2] or user[2] == '':
                         return redirect('/buyer/complete-profile')
                     
@@ -84,7 +101,7 @@ def buyer_auth():
 
                 send_welcome_email(email, user[1])
                 
-                # ✅ New user - mobile missing, send to complete-profile
+                # New user - mobile missing, send to complete-profile
                 if not user[2] or user[2] == '':
                     return redirect('/buyer/complete-profile')
                 
@@ -102,7 +119,7 @@ def buyer_auth():
 
 @buyer_bp.route('/buyer/google/login')
 def google_login():
-    # ✅ Get the base URL with HTTPS
+    # Get the base URL with HTTPS
     base_url = request.url_root.rstrip('/')
     if base_url.startswith('http://'):
         base_url = base_url.replace('http://', 'https://', 1)
@@ -111,6 +128,7 @@ def google_login():
     print(f"🔐 Redirect URI: {redirect_uri}")
     
     return google.authorize_redirect(redirect_uri)
+
 
 @buyer_bp.route('/buyer/google/callback')
 def google_callback():
@@ -156,7 +174,6 @@ def google_callback():
             session['buyer_name'] = name
             session['buyer_email'] = email
 
-            
             session.permanent = True
             return redirect('/buyer/complete-profile')
         
@@ -286,6 +303,7 @@ def buyer_dashboard():
     
     return render_template("Buyer/buyer_dashboard.html", products=products, buyer_name=buyer_name)
 
+
 @buyer_bp.route('/buyer/place-order/<int:product_id>', methods=['GET', 'POST'])
 def place_order(product_id):
     if not session.get('buyer_id'):
@@ -338,25 +356,28 @@ def place_order(product_id):
             if not all([amazon_order_id, order_amount, order_screenshot_url]):
                 msg = "Please fill all fields and upload screenshot"
             else:
+                # Use IST for order_placed_at
+                ist_now = get_ist_now()
                 cur.execute("""
                     INSERT INTO orders (order_id, buyer_id, seller_id, product_id, product_name, 
-                                       order_amount, refund_amount, status, order_screenshot)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s)
+                                       order_amount, refund_amount, status, order_screenshot, order_placed_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending', %s, %s)
                 """, (amazon_order_id, buyer_id, seller_id, product_id_db, product_name, 
-                      order_amount, refund_amount, order_screenshot_url))
+                      order_amount, refund_amount, order_screenshot_url, ist_now))
                 conn.commit()
 
-                # ✅ Send email to buyer
+                # Send email to buyer with IST timestamp
+                ist_time_str = format_ist_datetime(ist_now)
                 send_email(
                     to_email=session.get('buyer_email'),
                     subject=f"Order Confirmation - {amazon_order_id}",
-                    message=f"Your order has been placed successfully!\n\nOrder ID: {amazon_order_id}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder ScreenShot: {order_screenshot_url}"
+                    message=f"Your order has been placed successfully!\n\nOrder ID: {amazon_order_id}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
                 )
 
                 send_email(
                     to_email="bhalanijaynil@gmail.com",
                     subject=f"New Order Received - {amazon_order_id}",
-                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder ScreenShot: {order_screenshot_url}"
+                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
                 )
                 return redirect('/buyer/dashboard')
         
@@ -367,7 +388,7 @@ def place_order(product_id):
         cur.close()
         conn.close()
     
-    product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link':product[6]}
+    product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
     return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, buyer_name=session.get('buyer_name'))
 
 
@@ -397,7 +418,8 @@ def buyer_my_orders():
         cur.execute("""
             SELECT id, order_id, product_name, order_amount, refund_amount, 
                    status, order_placed_at, order_screenshot, review_screenshot, 
-                   review_link, delivered_screenshot, rejection_reason
+                   review_link, delivered_screenshot, rejection_reason, 
+                   paid_at, review_submitted_at
             FROM orders WHERE buyer_id = %s ORDER BY id DESC
         """, (buyer_id,))
         
@@ -409,12 +431,14 @@ def buyer_my_orders():
                 "order_amount": r[3],
                 "refund_amount": r[4],
                 "status": r[5],
-                "order_placed_at": r[6],
+                "order_placed_at": format_ist_datetime(r[6]) if r[6] else '-',
                 "order_screenshot": r[7],
                 "review_screenshot": r[8],
                 "review_link": r[9],
                 "delivered_screenshot": r[10],
-                "rejection_reason": r[11] if len(r) > 11 and r[11] else None
+                "rejection_reason": r[11] if len(r) > 11 and r[11] else None,
+                "paid_at": format_ist_datetime(r[12]) if len(r) > 12 and r[12] else '-',
+                "review_submitted_at": format_ist_datetime(r[13]) if len(r) > 13 and r[13] else '-'
             })
     except Exception as e:
         print(f"My orders error: {e}")
@@ -468,10 +492,12 @@ def submit_review(order_id):
             if not all([review_link, delivered_screenshot_url, review_screenshot_url]):
                 msg = "Please fill all fields and upload both screenshots"
             else:
+                # Use IST for review_submitted_at
+                ist_now = get_ist_now()
                 cur.execute("""
                     UPDATE orders SET delivered_screenshot = %s, review_screenshot = %s, review_link = %s,
-                        status = 'review_submitted', review_submitted_at = CURRENT_TIMESTAMP WHERE id = %s
-                """, (delivered_screenshot_url, review_screenshot_url, review_link, order_id))
+                        status = 'review_submitted', review_submitted_at = %s WHERE id = %s
+                """, (delivered_screenshot_url, review_screenshot_url, review_link, ist_now, order_id))
                 conn.commit()
                 return redirect('/buyer/my-orders')
         
@@ -485,6 +511,7 @@ def submit_review(order_id):
     order_dict = {'id': order[0], 'status': order[1], 'product_name': order[2], 'order_id': order[3]}
     return render_template("Buyer/buyer_submit_review.html", order=order_dict, msg=msg)
 
+
 @buyer_bp.route('/buyer/profile')
 def buyer_profile():
     if not session.get('buyer_id'):
@@ -496,7 +523,6 @@ def buyer_profile():
     cur = conn.cursor()
     
     try:
-        # ✅ Remove created_at from query
         cur.execute("""
             SELECT name, email, upi_id
             FROM buyers 
@@ -543,7 +569,6 @@ def buyer_profile_edit():
     cur = conn.cursor()
     
     try:
-        # ✅ Remove created_at from query
         cur.execute("""
             SELECT name, email, upi_id
             FROM buyers 
@@ -581,7 +606,6 @@ def render_edit_profile_with_error(buyer_id, msg, error):
     cur = conn.cursor()
     
     try:
-        # ✅ Remove created_at from query
         cur.execute("""
             SELECT name, email, upi_id
             FROM buyers 
@@ -608,6 +632,7 @@ def render_edit_profile_with_error(buyer_id, msg, error):
                           is_editing=True,
                           msg=msg,
                           error=error)
+
 
 @buyer_bp.route('/buyer/profile/update', methods=['POST'])
 def buyer_profile_update():
@@ -690,37 +715,3 @@ def buyer_profile_update():
     
     # Redirect with message
     return redirect('/buyer/profile?msg=' + msg + ('&error=1' if error else ''))
-
-
-def render_edit_profile_with_error(buyer_id, msg, error):
-    """Helper function to render edit profile with error message"""
-    conn = db()
-    cur = conn.cursor()
-    
-    try:
-        cur.execute("""
-            SELECT name, email, upi_id
-            FROM buyers 
-            WHERE id = %s
-        """, (buyer_id,))
-        
-        buyer = cur.fetchone()
-        buyer_name = buyer[0] if buyer else session.get('buyer_name', 'Customer')
-        buyer_email = buyer[1] if buyer else ''
-        buyer_upi = buyer[2] if buyer else ''
-        
-    except Exception as e:
-        buyer_name = session.get('buyer_name', 'Customer')
-        buyer_email = ''
-        buyer_upi = ''
-    finally:
-        cur.close()
-        conn.close()
-    
-    return render_template('Buyer/buyer_profile.html', 
-                          buyer_name=buyer_name,
-                          buyer_email=buyer_email,
-                          buyer_upi=buyer_upi,
-                          is_editing=True,
-                          msg=msg,
-                          error=error)
