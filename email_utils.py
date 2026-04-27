@@ -1,8 +1,8 @@
-impoimport yagmail
+import yagmail
 
-# Gmail Configuration
 SENDER_EMAIL = "heavydeals567@gmail.com"
 SENDER_PASSWORD = "xqsj qywl oaqh xajc"
+
 
 def send_email(to_email, subject, message, is_html=False):
     try:
@@ -19,133 +19,113 @@ def send_welcome_email(to_email, buyer_name):
     <html>
     <head>
         <meta charset="UTF-8">
-        <title>Welcome to HeavyDeals</title>
+        <title>Welcome</title>
     </head>
 
-    <body style="margin:0; padding:0; background:#0a192f; font-family: Arial, Helvetica, sans-serif;">
+    <body style="margin:0; padding:0; background:#0a192f;">
 
-    <!-- PREHEADER (fix blank space issue) -->
+    <!-- PREHEADER -->
     <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
-        Earn rewards on every order 💰 Start now!
+        Earn rewards fast 💰
     </div>
 
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a192f" style="background:#0a192f; margin:0; padding:0;">
+    <!-- FULL HEIGHT FIX (GMAIL BUG SOLUTION) -->
+    <table role="presentation" width="100%" height="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a192f">
         <tr>
-            <td align="center" valign="top">
+            <td valign="top" style="vertical-align:top !important; padding:0; margin:0;">
 
-                <table width="100%" cellpadding="0" cellspacing="0" border="0"
-                       style="max-width:500px; width:100%; background:#ffffff; border-radius:10px; overflow:hidden;">
+                <!-- MAIN CONTAINER -->
+                <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" border="0"
+                       style="max-width:500px; background:#ffffff;">
 
-                    <!-- Header -->
+                    <!-- HEADER -->
                     <tr>
-                        <td style="background:#0a192f; padding:15px 10px; text-align:center;">
-                            <div style="font-size:24px;">🛍️</div>
-                            <h1 style="color:#f97316; margin:5px 0 0; font-size:18px;">HeavyDeals</h1>
-                            <p style="color:#94a3b8; margin:3px 0 0; font-size:11px;">Earn Rewards for Reviews</p>
+                        <td style="background:#0a192f; text-align:center; padding:15px;">
+                            <div style="font-size:22px;">🛍️</div>
+                            <div style="color:#f97316; font-size:18px; font-weight:bold;">HeavyDeals</div>
+                            <div style="color:#94a3b8; font-size:11px;">Earn Rewards for Reviews</div>
                         </td>
                     </tr>
 
-                    <!-- Welcome -->
+                    <!-- WELCOME -->
                     <tr>
-                        <td style="padding:15px 12px 8px;">
-                            <h2 style="color:#0a192f; margin:0; font-size:17px;">
+                        <td style="padding:15px;">
+                            <div style="font-size:16px; font-weight:bold;">
                                 Welcome, {buyer_name}! 🎉
-                            </h2>
-                            <p style="color:#64748b; margin:5px 0 0; font-size:13px;">
+                            </div>
+                            <div style="font-size:13px; color:#64748b; margin-top:5px;">
                                 Get ready to earn rewards!
-                            </p>
+                            </div>
                         </td>
                     </tr>
 
-                    <!-- Bonus -->
+                    <!-- BONUS -->
                     <tr>
-                        <td style="padding:0 12px 12px;">
-                            <table width="100%" bgcolor="#ffedd5" style="border-radius:8px;">
+                        <td style="padding:0 15px 15px;">
+                            <table width="100%" bgcolor="#ffedd5">
                                 <tr>
                                     <td style="padding:10px; text-align:center;">
-                                        <p style="margin:0; font-size:12px; font-weight:bold;">✨ First Order Bonus</p>
-                                        <p style="margin:3px 0 0; font-size:16px; color:#f97316; font-weight:bold;">
+                                        <div style="font-size:12px; font-weight:bold;">✨ First Order Bonus</div>
+                                        <div style="font-size:16px; color:#f97316; font-weight:bold;">
                                             UP TO ₹500 EXTRA
-                                        </p>
+                                        </div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Steps -->
+                    <!-- STEPS -->
                     <tr>
-                        <td style="padding:10px 12px;">
-                            <p style="text-align:center; font-weight:bold; font-size:12px; margin:0 0 8px;">
+                        <td style="padding:10px 15px;">
+                            <div style="text-align:center; font-weight:bold; font-size:12px;">
                                 ⚡ How It Works
-                            </p>
+                            </div>
 
-                            <table width="100%">
+                            <table width="100%" style="margin-top:10px;">
                                 <tr>
-                                    <td width="33%" align="center">
-                                        <div style="background:#f8fafc; padding:10px; border-radius:6px;">
-                                            📦<br><span style="font-size:11px;">Order</span>
-                                        </div>
-                                    </td>
-
-                                    <td width="33%" align="center">
-                                        <div style="background:#f8fafc; padding:10px; border-radius:6px;">
-                                            ⭐<br><span style="font-size:11px;">Review</span>
-                                        </div>
-                                    </td>
-
-                                    <td width="33%" align="center">
-                                        <div style="background:#f8fafc; padding:10px; border-radius:6px;">
-                                            💰<br><span style="font-size:11px;">Get Paid</span>
-                                        </div>
-                                    </td>
+                                    <td align="center">📦<br><span style="font-size:11px;">Order</span></td>
+                                    <td align="center">⭐<br><span style="font-size:11px;">Review</span></td>
+                                    <td align="center">💰<br><span style="font-size:11px;">Get Paid</span></td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Benefits -->
+                    <!-- BENEFITS -->
                     <tr>
-                        <td style="padding:0 12px 10px;">
-                            <table width="100%" bgcolor="#f0fdf4" style="border-radius:6px;">
+                        <td style="padding:0 15px 15px;">
+                            <table width="100%" bgcolor="#f0fdf4">
                                 <tr>
                                     <td style="padding:10px;">
-                                        <p style="margin:0 0 5px; font-size:12px; color:#16a34a; font-weight:bold;">
+                                        <div style="color:#16a34a; font-size:12px; font-weight:bold;">
                                             🎁 What You Get
-                                        </p>
-                                        <p style="margin:2px 0; font-size:11px;">✅ 50% refund on every review</p>
-                                        <p style="margin:2px 0; font-size:11px;">✅ Bonus for first 5 orders</p>
-                                        <p style="margin:2px 0; font-size:11px;">✅ Priority support</p>
+                                        </div>
+                                        <div style="font-size:11px;">✅ 50% refund on every review</div>
+                                        <div style="font-size:11px;">✅ Bonus for first 5 orders</div>
+                                        <div style="font-size:11px;">✅ Priority support</div>
                                     </td>
                                 </tr>
                             </table>
                         </td>
                     </tr>
 
-                    <!-- Button -->
+                    <!-- BUTTON -->
                     <tr>
                         <td align="center" style="padding:15px;">
                             <a href="https://heavy-deal-a5in.onrender.com/buyer/dashboard"
-                               style="background:#f97316; color:white; padding:10px 22px; border-radius:25px;
-                               text-decoration:none; font-size:13px; font-weight:bold;">
-                               🚀 Start Earning
+                               style="background:#f97316; color:#fff; padding:10px 20px;
+                                      text-decoration:none; border-radius:20px; font-size:13px;">
+                                🚀 Start Earning
                             </a>
                         </td>
                     </tr>
 
-                    <!-- Footer -->
+                    <!-- FOOTER -->
                     <tr>
-                        <td style="padding:10px; text-align:center;">
-                            <hr style="border:none; border-top:1px solid #e2e8f0;">
-                            <p style="font-size:10px; color:#64748b;">
-                                Need help?
-                                <a href="mailto:heavydeals567@gmail.com" style="color:#f97316;">
-                                    heavydeals567@gmail.com
-                                </a>
-                            </p>
-                            <p style="font-size:10px; color:#64748b;">
-                                © HeavyDeals • Earn Rewards
-                            </p>
+                        <td style="text-align:center; padding:10px; font-size:10px; color:#64748b;">
+                            Need help? heavydeals567@gmail.com<br>
+                            © HeavyDeals
                         </td>
                     </tr>
 
@@ -159,8 +139,8 @@ def send_welcome_email(to_email, buyer_name):
     </html>
     """
 
-    return send_email(to_email, "Welcome to HeavyDeals! 🎉", html_content, is_html=True)
-
+    return send_email(to_email, "Welcome to HeavyDeals 🎉", html_content, is_html=True)
+    
 def send_otp_email(to_email, name, otp):
     """
     Send OTP for email verification
