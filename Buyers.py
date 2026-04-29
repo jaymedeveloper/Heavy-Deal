@@ -489,7 +489,7 @@ def place_order(product_id):
                 send_email(
                     to_email="bhalanijaynil@gmail.com",
                     subject=f"New Order Received - {amazon_order_id}",
-                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
+                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\n\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
                 )
                 return redirect('/buyer/dashboard')
         
@@ -609,6 +609,23 @@ def submit_review(order_id):
                         status = 'review_submitted', review_submitted_at = %s WHERE id = %s
                 """, (delivered_screenshot_url, review_screenshot_url, review_link, ist_now, order_id))
                 conn.commit()
+
+                cur.execute("SELECT product_name, order_amount, refund_amount, order_placed_at FROM orders WHERE id = %s", (order_id,))
+                order_details = cur.fetchone()
+                product_name = order_details[0]
+                order_amount = order_details[1]
+                refund_amount = order_details[2]
+                order_placed_at = order_details[3]
+                ist_time_str = format_ist_datetime(order_placed_at) 
+
+                
+
+
+                send_email(
+                    to_email=session.get('buyer_email'),
+                    subject=f"Order Review Confirmation - {order_id}",
+                    message=f"Your order review has been submitted successfully!\n\nOrder ID: {order_id}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nDelivered Screenshot: {delivered_screenshot_url}\nReview Screenshot: {review_screenshot_url}\nReview Link: {review_link}"
+                )
                 return redirect('/buyer/my-orders')
         
     except Exception as e:
