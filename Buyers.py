@@ -288,8 +288,8 @@ def google_callback():
             session['buyer_id'] = cur.fetchone()[0]
             session['buyer_name'] = name
             session['buyer_email'] = email
-
             session.permanent = True
+            send_welcome_email(email, name)
             return redirect('/buyer/complete-profile')
         
     except Exception as e:
