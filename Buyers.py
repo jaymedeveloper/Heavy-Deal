@@ -4,7 +4,7 @@ from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
 from email_utils import send_email, send_welcome_email, send_otp_email
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import random
 import string
@@ -102,24 +102,20 @@ def buyer_auth():
             conn = db()
             cur = conn.cursor()
             try:
-                # Check if email already exists and verified
                 cur.execute("SELECT id, is_email_verified FROM buyers WHERE email=%s", (email,))
                 existing = cur.fetchone()
                 
                 if existing and existing[1]:
-                    # Email already verified - return error as JSON for AJAX
                     return jsonify({
                         "success": False, 
                         "error": "email_exists",
                         "message": "Email already registered. Please login."
                     })
                 
-                # If email exists but not verified, delete it
                 if existing and not existing[1]:
                     cur.execute("DELETE FROM buyers WHERE email=%s", (email,))
                     conn.commit()
                 
-                # Store registration data temporarily
                 otp = generate_otp()
                 otp_storage[email] = {
                     'otp': otp,
@@ -133,10 +129,8 @@ def buyer_auth():
                     }
                 }
                 
-                # Send OTP email
                 send_otp_email(email, name, otp)
                 
-                # Return success with OTP data
                 return jsonify({
                     "success": True,
                     "email": email,
@@ -269,6 +263,10 @@ def google_callback():
             session['buyer_name'] = user[4]
             session['buyer_email'] = email
             
+            if not user[5]:
+                cur.execute("UPDATE buyers SET is_email_verified = true, verified_at = %s WHERE id = %s", (get_ist_now(), user[0]))
+                conn.commit()
+            
             mobile_exists = user[1] and user[1] != ''
             upi_exists = user[2] and user[2] != ''
             password_exists = user[3] and user[3] != ''
@@ -301,10 +299,6 @@ def google_callback():
     return redirect('/buyer/dashboard')
 
 
-# ============ REST OF THE FUNCTIONS (complete-profile, dashboard, etc.) ============
-# [Keep all existing functions from your original Buyers.py here]
-
-# ============ REST OF THE FUNCTIONS ============
 @buyer_bp.route('/buyer/complete-profile', methods=['GET', 'POST'])
 def complete_profile():
     if not session.get('buyer_id'):
@@ -377,6 +371,8 @@ def complete_profile():
                           current_upi=current_upi)
 
 
+# ============ UPDATED BUYER DASHBOARD WITH 2 DAYS / 3 ORDERS RULE ============
+
 @buyer_bp.route('/buyer/dashboard')
 def buyer_dashboard():
     if not session.get('buyer_id'):
@@ -389,28 +385,104 @@ def buyer_dashboard():
     products = []
     
     try:
+        now = get_ist_now()
+        two_days_ago = now - timedelta(days=2)
+        
+        # Step 1: Find sellers from whom buyer ordered 3+ products in last 2 days
         cur.execute("""
-            SELECT p.id, p.name, p.brand, p.refund, p.link, p.order_limit,
-                   COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id AND o.buyer_id = %s), 0) as buyer_ordered,
-                   COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id), 0) as total_ordered
-            FROM products p
-            WHERE p.seller_id IN (SELECT id FROM sellers WHERE status = 'approved')
-            ORDER BY p.id DESC
+            SELECT seller_id, COUNT(*) as order_count
+            FROM orders 
+            WHERE buyer_id = %s 
+                AND order_placed_at >= %s
+            GROUP BY seller_id
+            HAVING COUNT(*) >= 3
+        """, (buyer_id, two_days_ago))
+        
+        blocked_sellers = [row[0] for row in cur.fetchall()]
+        
+        # Step 2: Find products buyer already ordered (anytime)
+        cur.execute("""
+            SELECT DISTINCT product_id 
+            FROM orders 
+            WHERE buyer_id = %s
         """, (buyer_id,))
+        
+        ordered_products = [row[0] for row in cur.fetchall()]
+        
+        # Step 3: Build query dynamically based on filters
+        if blocked_sellers and ordered_products:
+            # Both filters active
+            placeholders_seller = ','.join(['%s'] * len(blocked_sellers))
+            placeholders_product = ','.join(['%s'] * len(ordered_products))
+            query = f"""
+                SELECT p.id, p.name, p.brand, p.refund, p.link, p.order_limit,
+                       COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id), 0) as total_ordered
+                FROM products p
+                WHERE p.seller_id IN (SELECT id FROM sellers WHERE status = 'approved')
+                    AND p.seller_id NOT IN ({placeholders_seller})
+                    AND p.id NOT IN ({placeholders_product})
+                ORDER BY p.id DESC
+            """
+            params = blocked_sellers + ordered_products
+            cur.execute(query, params)
+            
+        elif blocked_sellers and not ordered_products:
+            # Only blocked sellers, no ordered products
+            placeholders_seller = ','.join(['%s'] * len(blocked_sellers))
+            query = f"""
+                SELECT p.id, p.name, p.brand, p.refund, p.link, p.order_limit,
+                       COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id), 0) as total_ordered
+                FROM products p
+                WHERE p.seller_id IN (SELECT id FROM sellers WHERE status = 'approved')
+                    AND p.seller_id NOT IN ({placeholders_seller})
+                ORDER BY p.id DESC
+            """
+            cur.execute(query, blocked_sellers)
+            
+        elif not blocked_sellers and ordered_products:
+            # Only ordered products, no blocked sellers
+            placeholders_product = ','.join(['%s'] * len(ordered_products))
+            query = f"""
+                SELECT p.id, p.name, p.brand, p.refund, p.link, p.order_limit,
+                       COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id), 0) as total_ordered
+                FROM products p
+                WHERE p.seller_id IN (SELECT id FROM sellers WHERE status = 'approved')
+                    AND p.id NOT IN ({placeholders_product})
+                ORDER BY p.id DESC
+            """
+            cur.execute(query, ordered_products)
+            
+        else:
+            # No filters - show all products
+            cur.execute("""
+                SELECT p.id, p.name, p.brand, p.refund, p.link, p.order_limit,
+                       COALESCE((SELECT COUNT(*) FROM orders o WHERE o.product_id = p.id), 0) as total_ordered
+                FROM products p
+                WHERE p.seller_id IN (SELECT id FROM sellers WHERE status = 'approved')
+                ORDER BY p.id DESC
+            """)
         
         rows = cur.fetchall()
         for r in rows:
-            total_ordered = r[7] if len(r) > 7 else 0
+            total_ordered = r[6] if len(r) > 6 else 0
             order_limit = r[5]
             
             if total_ordered < order_limit:
                 products.append({
-                    "id": r[0], "name": r[1], "brand": r[2], "refund": r[3], "link": r[4],
-                    "order_limit": order_limit, "already_ordered": (r[6] if len(r) > 6 else 0) > 0,
+                    "id": r[0], 
+                    "name": r[1], 
+                    "brand": r[2], 
+                    "refund": r[3], 
+                    "link": r[4],
+                    "order_limit": order_limit, 
+                    "already_ordered": False,
                     "slots_left": order_limit - total_ordered
                 })
+                
     except Exception as e:
         print(f"Buyer dashboard error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         cur.close()
         conn.close()
@@ -447,14 +519,43 @@ def place_order(product_id):
         seller_id = product[4]
         total_ordered = product[5]
         
+        # Check 1: Product order limit reached?
         if total_ordered >= order_limit:
             msg = "This product's order limit has been reached."
-            return render_template("Buyer/buyer_place_order.html", product=product, msg=msg, error=True)
+            product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
+            return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, error=True)
         
+        # Check 2: Already ordered this product?
         cur.execute("SELECT id FROM orders WHERE buyer_id=%s AND product_id=%s", (buyer_id, product_id_db))
         if cur.fetchone():
             msg = "You have already placed an order for this product."
-            return render_template("Buyer/buyer_place_order.html", product=product, msg=msg, error=True)
+            product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
+            return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, error=True)
+        
+        # Check 3: NEW - Check buyer-seller limit (3 orders in 2 days)
+        now = get_ist_now()
+        two_days_ago = now - timedelta(days=2)
+        
+        cur.execute("""
+            SELECT COUNT(*) FROM orders 
+            WHERE buyer_id = %s 
+                AND seller_id = %s 
+                AND order_placed_at >= %s
+        """, (buyer_id, seller_id, two_days_ago))
+        
+        seller_orders_count = cur.fetchone()[0]
+        
+        if seller_orders_count >= 3:
+            msg = f"You have already ordered 3 products from this seller. Please wait 2 days before ordering again."
+            product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
+            return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, error=True)
+        
+        # Check 4: Already ordered this product? (Double check)
+        cur.execute("SELECT id FROM orders WHERE buyer_id=%s AND product_id=%s", (buyer_id, product_id_db))
+        if cur.fetchone():
+            msg = "You have already placed an order for this product."
+            product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
+            return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, error=True)
         
         if request.method == 'POST':
             amazon_order_id = request.form.get('amazon_order_id')
@@ -489,7 +590,7 @@ def place_order(product_id):
                 send_email(
                     to_email="bhalanijaynil@gmail.com",
                     subject=f"New Order Received - {amazon_order_id}",
-                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\n\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
+                    message=f"A new order has been placed.\n\nOrder ID: {amazon_order_id}\nBuyer: {session.get('buyer_name')}\nBuyer Email: {session.get('buyer_email')}\nProduct: {product_name}\nAmount: ₹{order_amount}\nReward: ₹{refund_amount/2}\nOrder Date (IST): {ist_time_str}\nOrder ScreenShot: {order_screenshot_url}"
                 )
                 return redirect('/buyer/dashboard')
         
@@ -503,6 +604,8 @@ def place_order(product_id):
     product_dict = {'id': product[0], 'name': product[1], 'refund': product[2], 'order_limit': product[3], 'link': product[6]}
     return render_template("Buyer/buyer_place_order.html", product=product_dict, msg=msg, buyer_name=session.get('buyer_name'))
 
+
+# ============ REST OF THE FUNCTIONS (my-orders, submit-review, profile, etc.) ============
 
 @buyer_bp.route('/buyer/my-orders')
 def buyer_my_orders():
@@ -617,9 +720,6 @@ def submit_review(order_id):
                 refund_amount = order_details[2]
                 order_placed_at = order_details[3]
                 ist_time_str = format_ist_datetime(order_placed_at) 
-
-                
-
 
                 send_email(
                     to_email=session.get('buyer_email'),
@@ -815,14 +915,12 @@ def buyer_profile_update():
     cur = conn.cursor()
     
     try:
-        # Check if email already exists for another user
         cur.execute("SELECT id FROM buyers WHERE email = %s AND id != %s", (email, buyer_id))
         if cur.fetchone():
             msg = "Email already exists for another account"
             error = True
             return render_edit_profile_with_error(buyer_id, msg, error)
         
-        # Update query
         if password:
             cur.execute("""
                 UPDATE buyers 
@@ -838,7 +936,6 @@ def buyer_profile_update():
         
         conn.commit()
         
-        # Update session
         session['buyer_name'] = name
         session['buyer_email'] = email
         
@@ -853,5 +950,4 @@ def buyer_profile_update():
         cur.close()
         conn.close()
     
-    # Redirect with message
     return redirect('/buyer/profile?msg=' + msg + ('&error=1' if error else ''))
