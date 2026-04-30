@@ -761,9 +761,7 @@
                 let amountColor = isPaid ? 'style="color: #16a34a; font-weight: 700; background-color: #dcfce7;"' : 'style="color: var(--orange); font-weight: 700;"';
                 
                 let payButtonHtml = '';
-                if (isPaid) {
-                    payButtonHtml = `<span class="btn-paid"><i class="fas fa-check-circle me-1"></i> Payment Received</span>`;
-                } else {
+                if (!isPaid) {
                     payButtonHtml = `<button class="btn-pay" onclick="event.stopPropagation(); handleGroupPayment('${dateKey}', ${group.totalAmount}, ${group.orderCount})">
                                         <i class="fas fa-google-pay"></i> Pay ₹${group.totalAmount.toLocaleString('en-IN')}
                                     </button>`;
