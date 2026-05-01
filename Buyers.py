@@ -395,7 +395,7 @@ def buyer_dashboard():
             WHERE buyer_id = %s 
                 AND order_placed_at >= %s
             GROUP BY seller_id
-            HAVING COUNT(*) >= 3
+            HAVING COUNT(*) >= 1
         """, (buyer_id, two_days_ago))
         
         blocked_sellers = [row[0] for row in cur.fetchall()]
