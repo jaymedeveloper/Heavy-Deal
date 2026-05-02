@@ -1,10 +1,17 @@
 from flask import Blueprint, render_template, request, redirect, session, jsonify
-from email_utils import send_email
+#from email_utils import send_email
 from db import db
 from datetime import datetime
 import pytz
+from email_utils import test_email
 
 admin_bp = Blueprint('admin', __name__)
+
+# Apne email pe test bhejo
+@admin_bp.route('/admin/test-email')
+def admin_test_email():
+    test_email("bhalanijaynil@gmail.com")
+    return "Test email sent!"
 
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "admin123"
