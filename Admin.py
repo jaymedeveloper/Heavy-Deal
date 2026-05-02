@@ -111,11 +111,7 @@ def approve_seller(seller_id):
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
         seller = cur.fetchone()
 
-        send_email(
-            to_email=seller[0],
-            subject="Seller Account Approved - HeavyDeals",
-            message=f"Dear {seller[1]},\n\nYour seller account has been approved. You can now login and start listing products.\n\nLogin here: https://heavy-deal-a5in.onrender.com/seller/login"
-        )
+        
     except Exception as e:
         print(f"Approve seller error: {e}")
         conn.rollback()
@@ -140,11 +136,7 @@ def reject_seller(seller_id):
         cur.execute("SELECT email, name FROM sellers WHERE id = %s", (seller_id,))
         seller = cur.fetchone()
 
-        send_email(
-            to_email=seller[0],
-            subject="Seller Account Rejected - HeavyDeals",
-            message=f"Dear {seller[1]},\n\nYour seller account has been Rejected. You can not use seller penal. \n\nSite: https://heavy-deal-a5in.onrender.com"
-        )
+        
     except Exception as e:
         print(f"Reject seller error: {e}")
         conn.rollback()
