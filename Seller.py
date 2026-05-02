@@ -247,7 +247,7 @@ def seller_orders():
         
         cur.execute("""
             SELECT o.id, o.order_id, o.product_name, o.order_amount, o.status, 
-                   o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata' as order_placed_ist,
+                   o.order_placed_at as order_placed_ist,
                    b.name, o.refund_amount, o.order_screenshot, o.delivered_screenshot, 
                    o.review_screenshot, o.review_link, o.batch_id
             FROM orders o 
@@ -259,6 +259,7 @@ def seller_orders():
         for r in cur.fetchall():
             order_date = ""
             if r[5]:
+                # r[5] is order_placed_at (datetime object)
                 order_date = r[5].strftime('%d-%m-%Y')
             
             orders.append({
@@ -267,14 +268,14 @@ def seller_orders():
                 "product_name": r[2],
                 "order_amount": r[3],
                 "status": r[4],
-                "order_placed_at": order_date,
+                "order_placed_at": order_date,  # This will be DD-MM-YYYY
                 "buyer_name": r[6],
                 "refund_amount": r[7],
                 "order_screenshot": r[8],
                 "delivered_screenshot": r[9],
                 "review_screenshot": r[10],
                 "review_link": r[11],
-                "batch_id": r[12],
+                "batch_id": r[12] if len(r) > 12 else None,
                 "daily_payment_status": daily_payment_status.get(order_date, 'pending')
             })
     except Exception as e:
