@@ -201,28 +201,6 @@
             font-size: 0.8rem;
         }
         .footer-links a { color: var(--orange); text-decoration: none; font-weight: 500; }
-        .otp-section {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e2e8f0;
-            text-align: center;
-        }
-        .resend-btn {
-            background: none;
-            border: none;
-            color: var(--orange);
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-        }
-        .resend-btn:hover { text-decoration: underline; }
-        .resend-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .countdown {
-            font-size: 0.7rem;
-            color: #64748b;
-            text-align: center;
-            margin-top: 5px;
-        }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .fa-spinner { animation: spin 1s linear infinite; }
         @media (max-width: 480px) {
@@ -263,7 +241,7 @@
             <button type="submit" class="btn-gradient"><i class="fas fa-arrow-right-to-bracket"></i> Login to Account</button>
         </form>
         
-        <!-- Register Form -->
+        <!-- Register Form - Direct Registration (No OTP) -->
         <form id="registerForm" class="form-container">
             <input type="hidden" name="action" value="register">
             <div class="input-group-modern">
@@ -290,26 +268,8 @@
                 <i class="fas fa-lock"></i>
                 <input type="password" name="confirm_password" id="regConfirmPassword" class="input-modern" placeholder="Confirm Password" required>
             </div>
-            <button type="submit" class="btn-gradient" id="sendOtpBtn"><i class="fas fa-paper-plane"></i> Send OTP</button>
+            <button type="submit" class="btn-gradient" id="registerBtn"><i class="fas fa-user-plus"></i> Register Now</button>
         </form>
-        
-        <!-- OTP Form - Initially Hidden -->
-        <div id="otpContainer" style="display: none;">
-            <form id="otpForm">
-                <input type="hidden" name="action" value="verify_otp">
-                <input type="hidden" name="email" id="otpEmail">
-                <div class="input-group-modern">
-                    <i class="fas fa-key"></i>
-                    <input type="text" name="otp" id="otpCode" class="input-modern" placeholder="Enter 6-digit OTP" maxlength="6" required>
-                </div>
-                <button type="submit" class="btn-gradient" id="verifyOtpBtn"><i class="fas fa-check-circle"></i> Verify & Register</button>
-                
-                <div class="otp-section">
-                    <div id="countdownTimer" class="countdown"></div>
-                    <button type="button" class="resend-btn" id="resendOtpBtn" onclick="resendOTP()" style="display: none;"><i class="fas fa-redo-alt"></i> Resend OTP</button>
-                </div>
-            </form>
-        </div>
         
         <div class="divider"><span>or continue with</span></div>
         <a href="/buyer/google/login" class="google-btn"><i class="fab fa-google"></i> Sign in with Google</a>
@@ -317,19 +277,14 @@
     </div>
     
     <script>
-        let countdownInterval;
-        let currentEmail = "";
-        
         function switchTab(tab) {
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
-            const otpContainer = document.getElementById('otpContainer');
             const loginTab = document.getElementById('loginTabBtn');
             const registerTab = document.getElementById('registerTabBtn');
             
             loginForm.classList.add('hidden');
             registerForm.classList.add('hidden');
-            otpContainer.style.display = 'none';
             
             if (tab === 'login') {
                 loginForm.classList.remove('hidden');
@@ -359,64 +314,11 @@
             }, 10000);
         }
         
-        function startCountdown(seconds) {
-            let remaining = seconds;
-            const timerElement = document.getElementById('countdownTimer');
-            const resendBtn = document.getElementById('resendOtpBtn');
-            
-            if (countdownInterval) clearInterval(countdownInterval);
-            
-            countdownInterval = setInterval(() => {
-                if (remaining <= 0) {
-                    clearInterval(countdownInterval);
-                    timerElement.innerHTML = '';
-                    resendBtn.style.display = 'inline-block';
-                    resendBtn.disabled = false;
-                } else {
-                    const mins = Math.floor(remaining / 60);
-                    const secs = remaining % 60;
-                    timerElement.innerHTML = `⏰ Resend OTP in ${mins}:${secs.toString().padStart(2, '0')}`;
-                    remaining--;
-                }
-            }, 1000);
-        }
-        
-        function resendOTP() {
-            if (!currentEmail) return;
-            
-            const resendBtn = document.getElementById('resendOtpBtn');
-            resendBtn.disabled = true;
-            resendBtn.style.opacity = '0.5';
-            
-            fetch('/buyer/resend-otp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentEmail })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert('OTP resent successfully!', 'success');
-                    startCountdown(60);
-                } else {
-                    showAlert(data.message, 'error');
-                    resendBtn.disabled = false;
-                    resendBtn.style.opacity = '1';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Failed to resend OTP', 'error');
-                resendBtn.disabled = false;
-                resendBtn.style.opacity = '1';
-            });
-        }
-        
         function isValidEmail(email) {
             return /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/.test(email);
         }
         
-        // Handle Register Form Submit (AJAX)
+        // Handle Register Form Submit - Direct Registration (No OTP)
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -458,12 +360,12 @@
                 return;
             }
             
-            // Disable Send OTP button
-            const sendOtpBtn = document.getElementById('sendOtpBtn');
-            sendOtpBtn.disabled = true;
-            sendOtpBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending OTP...';
+            // Disable Register button
+            const registerBtn = document.getElementById('registerBtn');
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
             
-            // Send AJAX request
+            // Send AJAX request for direct registration
             fetch('/buyer/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -479,75 +381,25 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // OTP sent successfully - show OTP form
-                    currentEmail = data.email;
-                    document.getElementById('otpEmail').value = data.email;
-                    document.getElementById('otpContainer').style.display = 'block';
-                    document.getElementById('registerForm').classList.add('hidden');
-                    startCountdown(300);
-                    showAlert('OTP sent to your email! Please check your inbox.', 'success');
-                } else {
-                    // Error occurred
-                    if (data.error === 'email_exists') {
-                        showAlert(data.message, 'error');
-                    } else {
-                        showAlert(data.message, 'error');
-                    }
-                    sendOtpBtn.disabled = false;
-                    sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('Something went wrong. Please try again.', 'error');
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP';
-            });
-        });
-        
-        // Handle OTP Form Submit
-        document.getElementById('otpForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('otpEmail').value;
-            const otp = document.getElementById('otpCode').value;
-            
-            if (!otp || otp.length !== 6) {
-                showAlert('Please enter a valid 6-digit OTP', 'error');
-                return;
-            }
-            
-            const verifyBtn = document.getElementById('verifyOtpBtn');
-            verifyBtn.disabled = true;
-            verifyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
-            
-            fetch('/buyer/auth', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    action: 'verify_otp',
-                    email: email,
-                    otp: otp
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
                     showAlert('Registration successful! Redirecting...', 'success');
                     if (data.redirect) {
                         window.location.href = data.redirect;
                     }
                 } else {
-                    showAlert(data.message, 'error');
-                    verifyBtn.disabled = false;
-                    verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Register';
+                    if (data.error === 'email_exists') {
+                        showAlert(data.message, 'error');
+                    } else {
+                        showAlert(data.message, 'error');
+                    }
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showAlert('Something went wrong', 'error');
-                verifyBtn.disabled = false;
-                verifyBtn.innerHTML = '<i class="fas fa-check-circle"></i> Verify & Register';
+                showAlert('Something went wrong. Please try again.', 'error');
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = '<i class="fas fa-user-plus"></i> Register Now';
             });
         });
         
