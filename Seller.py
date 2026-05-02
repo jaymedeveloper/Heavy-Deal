@@ -281,7 +281,7 @@ def seller_orders():
     except Exception as e:
         print(f"Orders fetch error: {e}")
     finally:
-        cur.close()
+        cur.close()  
         conn.close()
     
     return render_template("Seller/seller_orders.html", orders=orders, seller_name=seller_name)
