@@ -223,9 +223,10 @@ def admin_daily_payments():
         for seller in sellers:
             seller_id, seller_name, seller_username, seller_email, seller_phone = seller
             
+            # FIXED: Get order dates directly from orders table without timezone conversion
             cur.execute("""
                 SELECT DISTINCT 
-                    DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') as order_date
+                    DATE(o.order_placed_at) as order_date
                 FROM orders o
                 WHERE o.seller_id = %s 
                     AND o.status IN ('pending', 'review_submitted', 'approved', 'paid')
@@ -244,7 +245,7 @@ def admin_daily_payments():
                         SUM(o.order_amount) as total_amount
                     FROM orders o
                     WHERE o.seller_id = %s 
-                        AND DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = %s
+                        AND DATE(o.order_placed_at) = %s
                         AND o.status IN ('pending', 'review_submitted', 'approved', 'paid')
                 """, (seller_id, order_date))
                 
@@ -319,6 +320,7 @@ def api_orders_by_date():
     cur = conn.cursor()
     
     try:
+        # FIXED: Removed timezone conversion, use direct DATE comparison
         cur.execute("""
             SELECT 
                 o.id,
@@ -336,7 +338,7 @@ def api_orders_by_date():
             FROM orders o
             JOIN buyers b ON o.buyer_id = b.id
             WHERE o.seller_id = %s 
-                AND DATE(o.order_placed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata') = %s
+                AND DATE(o.order_placed_at) = %s
             ORDER BY o.id DESC
         """, (seller_id, date_db))
         
@@ -367,7 +369,6 @@ def api_orders_by_date():
     finally:
         cur.close()
         conn.close()
-
 
 @admin_bp.route('/admin/payment/<int:payment_id>/approve', methods=['POST'])
 def approve_payment(payment_id):
