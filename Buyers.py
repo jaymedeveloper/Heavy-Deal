@@ -3,7 +3,7 @@ from db import db
 from authlib.integrations.flask_client import OAuth
 import cloudinary
 import cloudinary.uploader
-from email_utils import send_email, send_welcome_email, send_otp_email
+#from email_utils import send_email, send_welcome_email, send_otp_email
 from datetime import datetime, timedelta
 import pytz
 import random
